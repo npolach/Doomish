@@ -42,6 +42,9 @@ const Flt PI = 3.141592653589793;
 Ppmimage * floor1Image=NULL;
 GLuint floor1Texture;
 
+Ppmimage * wall1Image=NULL;
+GLuint wall1Texture;
+
 class Global {
     public:
 	int xres, yres;
@@ -169,52 +172,36 @@ class X11_wrapper {
 void imageConvert()
 {
     //    //clean up all images in master folder
-    //    remove("./images/background.ppm");
-    //    remove("./images/background2.ppm");
-    //    remove("./images/background3.ppm");
-    //    remove("./images/RocketFinal.ppm");
-    //    remove("./images/goal.ppm");
-    //    remove("./images/refuel.ppm");
-    //    remove("./images/ground.ppm");
-    //    remove("./images/platform.ppm");
-    //    remove("./images/hitters.ppm");
+    remove("./images/floor1.ppm");
+    remove("./images/wall1.ppm");
     //
     //    //convert images to ppm
-    //    system("mogrify -format ppm ./images/background.jpg");
-    //    system("mogrify -format ppm ./images/background2.jpg");
-    //    system("mogrify -format ppm ./images/background3.jpg");
-    //    system("mogrify -format ppm ./images/RocketFinal.jpg");
-    //    system("mogrify -format ppm ./images/goal.jpg");
-    //    system("mogrify -format ppm ./images/refuel.jpg");
-    //    system("mogrify -format ppm ./images/ground.jpg");
-    //    system("mogrify -format ppm ./images/platform.jpg");
-    //    system("mogrify -format ppm ./images/hitters.jpg");
+    system("mogrify -format ppm ./images/floor1.jpg");
+    system("mogrify -format ppm ./images/wall1.jpg");
 }
 
 void imageClean()
 {
-    //    //clean up all images in master folder
-    //    remove("./images/background.ppm");
-    //    remove("./images/background2.ppm");
-    //    remove("./images/background3.ppm");
-    //    remove("./images/RocketFinal.ppm");
-    //    remove("./images/goal.ppm");
-    //    remove("./images/refuel.ppm");
-    //    remove("./images/ground.ppm");
-    //    remove("./images/platform.ppm");
-    //    remove("./images/hitters.ppm");
-    //    return;
+    //clean up all images in master folder
+    remove("./images/floor1.ppm");
+    remove("./images/wall1.ppm");
 }
+
 void init_opengl();
 void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
 void physics();
 void render();
 
+void init_image(char * imagePath, Ppmimage * image, GLuint * texture);
+unsigned char *buildAlphaData(Ppmimage *img);
+void init_alpha_image(char * imagePath, Ppmimage * image,
+	GLuint * texture, GLuint * silhouette);
+
 int main()
 {
-    init_opengl();
     imageConvert();
+    init_opengl();
     int done=0;
     while (!done) {
 	while (x11.getXPending()) {
@@ -270,10 +257,14 @@ void init_opengl()
     glEnable(GL_TEXTURE_2D);
     initialize_fonts();
 
+    // Initialize floor images
+    init_image((char *)"./images/floor1.ppm",
+	    floor1Image, &floor1Texture);
 
-    // Initialize platform images
-//    init_image((char *)"./images/floor1.ppm",
-//	          g.ground.image, &g->ground.texture);
+    // Initialize wall images
+    init_image((char *)"./images/wall1.ppm",
+		wall1Image, &wall1Texture);
+
 
     //
     //Test the stencil buffer on this computer.
@@ -613,19 +604,66 @@ int check_keys(XEvent *e)
 
 void drawFloor()
 {
-    glColor3f(0.6f, 0.6f, 0.6f);
     Flt w = 5.0 * 0.5;
     Flt d = 5.0 * 0.5;
     Flt h = -1.0;
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    glTranslated(0, 0, 0);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, floor1Texture);
     glBegin(GL_QUADS);
-    //top
-    glNormal3f( 0.0f, 1.0f, 0.0f);
+
+    glTexCoord2f(0.0f, 1.0f);
     glVertex3f( w, h,-d);
+
+    glTexCoord2f(0.0f, 0.0f);
     glVertex3f(-w, h,-d);
+
+    glTexCoord2f(1.0f, 0.0f);
     glVertex3f(-w, h, d);
+
+    glTexCoord2f(1.0f, 1.0f);
     glVertex3f( w, h, d);
+
     glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+void drawWall()
+{
+    Flt w = 5.0 * 0.5;
+    Flt d = 5.0 * 0.5;
+    Flt h = -1.0;
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    glTranslated(0, 0, 0);
+    glRotatef(90, 1, 0, 0);
+    glRotatef(90, 0, 0, 1);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, wall1Texture);
+    glBegin(GL_QUADS);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f( w, h,-d);
+
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w, h,-d);
+
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f(-w, h, d);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w, h, d);
+
+    glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 
 //void drawBox()
 //{
@@ -704,29 +742,6 @@ void drawFloor()
 void physics()
 {
 }
-
-// Example of draw
-//void Fueler::draw()
-//{
-//    // Fueler image
-//    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-//    glPushMatrix();
-//    glTranslated(pos[0], pos[1], 0);
-//    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-//    glBindTexture(GL_TEXTURE_2D, silhouette);
-//    glEnable(GL_ALPHA_TEST);
-//    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
-//    glBegin(GL_QUADS);
-//    glTexCoord2f(0.0f, 1.0f); glVertex2i(0, 0);
-//    glTexCoord2f(0.0f, 0.0f); glVertex2i(0, shape.height+5); 
-//    glTexCoord2f(1.0f, 0.0f); glVertex2i(shape.width, shape.height+5);
-//    glTexCoord2f(1.0f, 1.0f); glVertex2i(shape.width, 0);
-//
-//    glEnd();
-//    glPopMatrix();
-//    glBindTexture(GL_TEXTURE_2D, 0);
-//    glDisable(GL_ALPHA_TEST);
-//}
 
 void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
 {
@@ -810,6 +825,7 @@ void render()
     glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
     //
     drawFloor();
+    drawWall();
     //    drawBox();
     //    drawWall();
     //
