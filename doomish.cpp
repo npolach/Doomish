@@ -668,13 +668,28 @@ void drawWall()
 
 	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
 	glPushMatrix();
-	glTranslated(0, 0, 0);
+	glTranslated(0, 0, -2);
 	glRotatef(90, 1, 0, 0);
-	glRotatef(90, 0, 0, 1);
+	//	glRotatef(90, 0, 0, 1);
 	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
 	glBindTexture(GL_TEXTURE_2D, wall1Texture);
 	glBegin(GL_QUADS);
 
+	//	glTexCoord2f(0.0f, 1.0f);
+	//	glVertex3f( w, h,-d);
+	//
+	//	glTexCoord2f(0.0f, 0.0f);
+	//	glVertex3f(-w, h,-d);
+	//
+	//	glTexCoord2f(1.0f, 0.0f);
+	//	glVertex3f(-w, h, d);
+	//
+	//	glTexCoord2f(1.0f, 1.0f);
+	//	glVertex3f( w, h, d);
+
+	//
+	glTranslated(0, 1, 0);
+	glRotatef(-90, 0, 0, 1);
 	glTexCoord2f(0.0f, 1.0f);
 	glVertex3f( w, h,-d);
 
@@ -686,6 +701,7 @@ void drawWall()
 
 	glTexCoord2f(1.0f, 1.0f);
 	glVertex3f( w, h, d);
+
 
 	glEnd();
 	glPopMatrix();
