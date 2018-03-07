@@ -63,6 +63,12 @@ class Global {
 	Flt x,y,z;
 	Flt velx;
 	Flt velz;
+	unsigned char key_states;
+	unsigned char w_mask;
+	unsigned char a_mask;
+	unsigned char s_mask;
+	unsigned char d_mask;
+
 
 	GLfloat lightPosition[4];
 	Global() {
@@ -83,6 +89,22 @@ class Global {
 	    z = 5.0;
 	    velx = 0.0;
 	    velz = 0.0;
+	    // Masks for byte
+	    // #7 = 0x80 = 1000 0000
+	    // #6 = 0x40 = 0100 0000
+	    // #5 = 0x20 = 0010 0000
+	    // #4 = 0x10 = 0001 0000
+	    // 
+	    // d = 0x08 = 0000 1000
+	    // s = 0x04 = 0000 0100
+	    // a = 0x02 = 0000 0010
+	    // w = 0x01 = 0000 0001
+	    // Using w, a, s, d, shift
+	    key_states = 0x00;
+	    w_mask = 0x01;
+	    a_mask = 0x02;
+	    s_mask = 0x04;
+	    d_mask = 0x08;
 
 	    //light is up high, right a little, toward a little
 	    MakeVector(100.0f, 240.0f, 40.0f, lightPosition);
@@ -374,9 +396,20 @@ int check_keys(XEvent *e)
 
     int key = XLookupKeysym(&e->xkey, 0);
     if (e->type == KeyRelease) {
-	if (key == XK_Shift_L || key == XK_Shift_R) {
-	    shift = false;
-	    return 0;
+	switch(key) {
+	    // Camera angle
+	    case XK_w:
+		g.key_states = g.key_states&~(g.w_mask);
+		break;
+	    case XK_a:
+		g.key_states = g.key_states&~(g.a_mask);
+		break;
+	    case XK_s:
+		g.key_states = g.key_states&~(g.s_mask);
+		break;
+	    case XK_d:
+		g.key_states = g.key_states&~(g.d_mask);
+		break;
 	}
     }
 
@@ -391,31 +424,16 @@ int check_keys(XEvent *e)
 	    case XK_1:
 		break;
 	    case XK_w:
-		//if (shift) {
-		g.velx += 0.02f;
-		if (g.velx > 0.08f)
-		    g.velx = 0.08f;
-		g.velz += 0.02f;
-		if (g.velz > 0.08f)
-		    g.velz = 0.08f;
+		g.key_states = g.key_states|g.w_mask;
 		break;
 	    case XK_a:
-		g.angleH -= 0.020f;
-		g.lx = sin(g.angleH);
-		g.lz = -cos(g.angleH);
+		g.key_states = g.key_states|g.a_mask;
 		break;
 	    case XK_s:
-		g.velx -= 0.02f;
-		if (g.velx < -0.08f)
-		    g.velx = -0.08f;
-		g.velz -= 0.02f;
-		if (g.velz < -0.08f)
-		    g.velz = -0.08f;
+		g.key_states = g.key_states|g.s_mask;
 		break;
 	    case XK_d:
-		g.angleH += 0.020f;
-		g.lx = sin(g.angleH);
-		g.lz = -cos(g.angleH);
+		g.key_states = g.key_states|g.d_mask;
 		break;
 
 	    case XK_e:
@@ -437,6 +455,79 @@ int check_keys(XEvent *e)
 	}
 	return 0;
     }
+
+//int check_keys(XEvent *e)
+//{
+//    static int shift = false;
+//    //Was there input from the keyboard?
+//    if (e->type != KeyPress && e->type != KeyRelease)
+//	return 0;
+//
+//    int key = XLookupKeysym(&e->xkey, 0);
+//    if (e->type == KeyRelease) {
+//	if (key == XK_Shift_L || key == XK_Shift_R) {
+//	    shift = false;
+//	    return 0;
+//	}
+//    }
+//
+//    if (e->type == KeyPress) {
+//	if (key == XK_Shift_L || key == XK_Shift_R) {
+//	    shift = true;
+//	    return 0;
+//	}
+//	//Was there input from the keyboard?
+//	switch(key) {
+//	    // Camera angle
+//	    case XK_1:
+//		break;
+//	    case XK_w:
+//		//if (shift) {
+//		g.velx += 0.02f;
+//		if (g.velx > 0.08f)
+//		    g.velx = 0.08f;
+//		g.velz += 0.02f;
+//		if (g.velz > 0.08f)
+//		    g.velz = 0.08f;
+//		break;
+//	    case XK_a:
+//		g.angleH -= 0.020f;
+//		g.lx = sin(g.angleH);
+//		g.lz = -cos(g.angleH);
+//		break;
+//	    case XK_s:
+//		g.velx -= 0.02f;
+//		if (g.velx < -0.08f)
+//		    g.velx = -0.08f;
+//		g.velz -= 0.02f;
+//		if (g.velz < -0.08f)
+//		    g.velz = -0.08f;
+//		break;
+//	    case XK_d:
+//		g.angleH += 0.020f;
+//		g.lx = sin(g.angleH);
+//		g.lz = -cos(g.angleH);
+//		break;
+//
+//	    case XK_e:
+//		g.x += 0.02f;
+//		break;
+//	    case XK_q:
+//		g.x -= 0.02f;
+//		break;
+//	    case XK_c:
+//		g.y += 0.02f;
+//		break;
+//	    case XK_z:
+//		g.y -= 0.02f;
+//		break;
+//
+//	    case XK_Escape:
+//		return 1;
+//	}
+//	}
+//	return 0;
+//    }
 
     void drawFloor()
     {
@@ -639,6 +730,34 @@ int check_keys(XEvent *e)
 
     void physics()
     {
+
+	if (g.key_states & g.w_mask) {
+		g.velx += 0.02f;
+		if (g.velx > 0.08f)
+		    g.velx = 0.08f;
+		g.velz += 0.02f;
+		if (g.velz > 0.08f)
+		    g.velz = 0.08f;
+	}
+	if (g.key_states & g.a_mask) {
+		g.angleH -= 0.020f;
+		g.lx = sin(g.angleH);
+		g.lz = -cos(g.angleH);
+	}
+	if (g.key_states & g.s_mask) {
+		g.velx -= 0.02f;
+		if (g.velx < -0.08f)
+		    g.velx = -0.08f;
+		g.velz -= 0.02f;
+		if (g.velz < -0.08f)
+		    g.velz = -0.08f;
+	}
+	if (g.key_states & g.d_mask) {
+		g.angleH += 0.020f;
+		g.lx = sin(g.angleH);
+		g.lz = -cos(g.angleH);
+	}
+
 	g.x += g.lx * g.velx;
 	g.z += g.lz * g.velz;
 	if (g.velx < 0.0f)
