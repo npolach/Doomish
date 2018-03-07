@@ -84,6 +84,7 @@ class Global {
 	    lx = sin(angleH);
 	    ly = sin(angleV);
 	    lz = -cos(angleH);
+
 	    x = 0.0;
 	    y = 0.0;
 	    z = 5.0;
@@ -338,6 +339,7 @@ void check_mouse(XEvent *e)
 
     static int savex = 0;
     static int savey = 0;
+    bool skip = false;
     static int ct=0;
     //	if (e->type == ButtonRelease) {
     //		return;
@@ -350,7 +352,8 @@ void check_mouse(XEvent *e)
     //			//Right button is down
     //		}
     //	}
-    if (savex != e->xbutton.x || savey != e->xbutton.y) {
+    //if (savex != e->xbutton.x || savey != e->xbutton.y) {
+    if ((savex != e->xbutton.x || savey != e->xbutton.y) && !skip) {
 	//Mouse moved
 	int xdiff = savex - e->xbutton.x;
 	int ydiff = savey - e->xbutton.y;
@@ -360,11 +363,13 @@ void check_mouse(XEvent *e)
 	    g.angleH += 0.015f;
 	    g.lx = sin(g.angleH);
 	    g.lz = -cos(g.angleH);
+
 	}
 	else if (xdiff > 0) {
 	    g.angleH -= 0.015f;
 	    g.lx = sin(g.angleH);
 	    g.lz = -cos(g.angleH);
+
 	}
 	if (ydiff < 0) {
 	    g.angleV -= 0.015f;
@@ -384,6 +389,7 @@ void check_mouse(XEvent *e)
 	x11.set_mouse_position(g.xres/2,g.yres/2);
 	savex = e->xbutton.x;
 	savey = e->xbutton.y;
+	skip = !skip;
     }
 }
 
@@ -452,9 +458,9 @@ int check_keys(XEvent *e)
 	    case XK_Escape:
 		return 1;
 	}
-	}
-	return 0;
     }
+    return 0;
+}
 
 //int check_keys(XEvent *e)
 //{
@@ -529,368 +535,393 @@ int check_keys(XEvent *e)
 //	return 0;
 //    }
 
-    void drawFloor()
-    {
-	Flt w = 2.5;
-	Flt d = 2.5;
-	Flt h = -1.0;
+void drawFloor()
+{
+    Flt w = 2.5;
+    Flt d = 2.5;
+    Flt h = -1.0;
 
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	glPushMatrix();
-	glTranslated(0, 0, 0);
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, floor1Texture);
-	glBegin(GL_QUADS);
-
-
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d);
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    glTranslated(0, 0, 0);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, floor1Texture);
+    glBegin(GL_QUADS);
 
 
-	glEnd();
-	glPopMatrix();
-	glBindTexture(GL_TEXTURE_2D, 0);
-    }
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f( w, h,-d);
 
-    void drawWall()
-    {
-	Flt w = 2.5;
-	Flt d = 2.5;
-	Flt h = -1.0;
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w, h,-d);
 
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	glPushMatrix();
-	glTranslated(0, 0, -2);
-	glRotatef(90, 1, 0, 0);
-	//	glRotatef(90, 0, 0, 1);
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, wall1Texture);
-	glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-w, h, d);
 
-	//	glTexCoord2f(0.0f, 1.0f);
-	//	glVertex3f( w, h,-d);
-	//
-	//	glTexCoord2f(0.0f, 0.0f);
-	//	glVertex3f(-w, h,-d);
-	//
-	//	glTexCoord2f(1.0f, 0.0f);
-	//	glVertex3f(-w, h, d);
-	//
-	//	glTexCoord2f(1.0f, 1.0f);
-	//	glVertex3f( w, h, d);
-
-	//
-	glTranslated(0, 1, 0);
-	glRotatef(-90, 0, 0, 1);
-
-	//glTexCoord2f(0.0f, 1.0f);
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d);
-
-	//glTexCoord2f(0.0f, 0.0f);
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d);
-
-	//glTexCoord2f(1.0f, 0.0f);
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d);
-
-	//glTexCoord2f(1.0f, 1.0f);
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d);
-
-	glEnd();
-	glPopMatrix();
-	glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    void drawEnemy()
-    {
-	Flt w = 0.5;
-	Flt d = 0.5;
-	Flt h = -1.0;
-
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	glPushMatrix();
-	glTranslated(0, -0.5, 0);
-	glRotatef(90, 1, 0, 0);
-	//glRotatef(270, 0, 1, 0);
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, impSilhouette);
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
-	glBegin(GL_QUADS);
-
-	//glTexCoord2f(0.0f, 1.0f);
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d);
-
-	//glTexCoord2f(0.0f, 0.0f);
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d);
-
-	//glTexCoord2f(1.0f, 0.0f);
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d);
-
-	//glTexCoord2f(1.0f, 1.0f);
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d);
-
-	glEnd();
-	glPopMatrix();
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_ALPHA_TEST);
-    }
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w, h, d);
 
 
+    glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
 
-    //void drawBox()
-    //{
-    //    glColor3f(0.2f, 0.7f, 1.0f);
-    //    box(3.0, 0.2, 3.0);
-    //}
+void drawWall()
+{
+    Flt w = 2.5;
+    Flt d = 2.5;
+    Flt h = -1.0;
 
-    //void drawWall()
-    //{
-    //    //
-    //    //   dimensions are 1.0 x 1.0
-    //    //
-    //    //   0--------------1--------2--------------3
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   4--------------5--------6--------------7
-    //    //   |              |        |              |
-    //    //   |              |  hole  |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   8--------------9--------10-------------11
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   12-------------13-------14-------------15
-    //    //
-    //    //
-    //    //draw a wall with a hole in it.
-    //    float vert[16][3] = {
-    //	-.5, .5, 0,
-    //	-.1, .5, 0,
-    //	.1, .5, 0,
-    //	.5, .5, 0,
-    //	-.5, .1, 0,
-    //	-.1, .1, 0,
-    //	.1, .1, 0,
-    //	.5, .1, 0,
-    //	-.5,-.1, 0,
-    //	-.1,-.1, 0,
-    //	.1,-.1, 0,
-    //	.5,-.1, 0,
-    //	-.5,-.5, 0,
-    //	-.1,-.5, 0,
-    //	.1,-.5, 0,
-    //	.5,-.5, 0 };
-    //    const int n = 21;
-    //    int idx[n] = {0,4,1,5,2,6,3,7,6,11,10,15,14,10,13,9,12,8,9,4,5};
-    //    glColor3f(1.0f, 0.0f, 0.0f);
-    //    glPushMatrix();
-    //    glTranslated(0.0, 1.0, 0.0);
-    //    glBegin(GL_TRIANGLE_STRIP);
-    //    glNormal3f( 0.0f, 0.0f, 1.0f);
-    //    for (int i=0; i<n; i++)
-    //	glVertex3fv(vert[idx[i]]);
-    //    glEnd();
-    //    glPopMatrix();
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    glTranslated(0, 0, -2);
+    glRotatef(90, 1, 0, 0);
+    //	glRotatef(90, 0, 0, 1);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, wall1Texture);
+    glBegin(GL_QUADS);
+
+    //	glTexCoord2f(0.0f, 1.0f);
+    //	glVertex3f( w, h,-d);
     //
-    //    glColor3f(1.0f, 1.0f, 0.0f);
-    //    glPushMatrix();
-    //    glTranslated(0.0, 1.0, -0.1);
-    //    glBegin(GL_TRIANGLE_STRIP);
-    //    glNormal3f( 0.0f, 0.0f, 1.0f);
-    //    for (int i=0; i<n; i++)
-    //	glVertex3fv(vert[idx[i]]);
-    //    glEnd();
-    //    glPopMatrix();
-    //}
+    //	glTexCoord2f(0.0f, 0.0f);
+    //	glVertex3f(-w, h,-d);
+    //
+    //	glTexCoord2f(1.0f, 0.0f);
+    //	glVertex3f(-w, h, d);
+    //
+    //	glTexCoord2f(1.0f, 1.0f);
+    //	glVertex3f( w, h, d);
 
-    void physics()
-    {
+    //
+    glTranslated(0, 1, 0);
+    glRotatef(-90, 0, 0, 1);
 
-	if (g.key_states & g.w_mask) {
-		g.velx += 0.02f;
-		if (g.velx > 0.08f)
-		    g.velx = 0.08f;
-		g.velz += 0.02f;
-		if (g.velz > 0.08f)
-		    g.velz = 0.08f;
-	}
-	if (g.key_states & g.a_mask) {
-		g.angleH -= 0.020f;
-		g.lx = sin(g.angleH);
-		g.lz = -cos(g.angleH);
-	}
-	if (g.key_states & g.s_mask) {
-		g.velx -= 0.02f;
-		if (g.velx < -0.08f)
-		    g.velx = -0.08f;
-		g.velz -= 0.02f;
-		if (g.velz < -0.08f)
-		    g.velz = -0.08f;
-	}
-	if (g.key_states & g.d_mask) {
-		g.angleH += 0.020f;
-		g.lx = sin(g.angleH);
-		g.lz = -cos(g.angleH);
-	}
+    //glTexCoord2f(0.0f, 1.0f);
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f( w, h,-d);
+
+    //glTexCoord2f(0.0f, 0.0f);
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w, h,-d);
+
+    //glTexCoord2f(1.0f, 0.0f);
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-w, h, d);
+
+    //glTexCoord2f(1.0f, 1.0f);
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w, h, d);
+
+    glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void drawEnemy()
+{
+    Flt w = 0.5;
+    Flt d = 0.5;
+    Flt h = -1.0;
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    glTranslated(0, -0.5, 0);
+    glRotatef(90, 1, 0, 0);
+    //glRotatef(270, 0, 1, 0);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, impSilhouette);
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+    glBegin(GL_QUADS);
+
+    //glTexCoord2f(0.0f, 1.0f);
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f( w, h,-d);
+
+    //glTexCoord2f(0.0f, 0.0f);
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w, h,-d);
+
+    //glTexCoord2f(1.0f, 0.0f);
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-w, h, d);
+
+    //glTexCoord2f(1.0f, 1.0f);
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w, h, d);
+
+    glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_ALPHA_TEST);
+}
+
+
+
+//void drawBox()
+//{
+//    glColor3f(0.2f, 0.7f, 1.0f);
+//    box(3.0, 0.2, 3.0);
+//}
+
+//void drawWall()
+//{
+//    //
+//    //   dimensions are 1.0 x 1.0
+//    //
+//    //   0--------------1--------2--------------3
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   4--------------5--------6--------------7
+//    //   |              |        |              |
+//    //   |              |  hole  |              |
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   8--------------9--------10-------------11
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   |              |        |              |
+//    //   12-------------13-------14-------------15
+//    //
+//    //
+//    //draw a wall with a hole in it.
+//    float vert[16][3] = {
+//	-.5, .5, 0,
+//	-.1, .5, 0,
+//	.1, .5, 0,
+//	.5, .5, 0,
+//	-.5, .1, 0,
+//	-.1, .1, 0,
+//	.1, .1, 0,
+//	.5, .1, 0,
+//	-.5,-.1, 0,
+//	-.1,-.1, 0,
+//	.1,-.1, 0,
+//	.5,-.1, 0,
+//	-.5,-.5, 0,
+//	-.1,-.5, 0,
+//	.1,-.5, 0,
+//	.5,-.5, 0 };
+//    const int n = 21;
+//    int idx[n] = {0,4,1,5,2,6,3,7,6,11,10,15,14,10,13,9,12,8,9,4,5};
+//    glColor3f(1.0f, 0.0f, 0.0f);
+//    glPushMatrix();
+//    glTranslated(0.0, 1.0, 0.0);
+//    glBegin(GL_TRIANGLE_STRIP);
+//    glNormal3f( 0.0f, 0.0f, 1.0f);
+//    for (int i=0; i<n; i++)
+//	glVertex3fv(vert[idx[i]]);
+//    glEnd();
+//    glPopMatrix();
+//
+//    glColor3f(1.0f, 1.0f, 0.0f);
+//    glPushMatrix();
+//    glTranslated(0.0, 1.0, -0.1);
+//    glBegin(GL_TRIANGLE_STRIP);
+//    glNormal3f( 0.0f, 0.0f, 1.0f);
+//    for (int i=0; i<n; i++)
+//	glVertex3fv(vert[idx[i]]);
+//    glEnd();
+//    glPopMatrix();
+//}
+
+void physics()
+{
+
+    if (g.key_states & g.w_mask) {
+	g.velx += 0.02f;
+	if (g.velx > 0.08f)
+	    g.velx = 0.08f;
+	g.velz += 0.02f;
+	if (g.velz > 0.08f)
+	    g.velz = 0.08f;
+	g.x += g.lx * g.velx;
+	g.z += g.lz * g.velz;
+    }
+    if (g.key_states & g.a_mask) {
+	//		g.angleH -= 0.020f;
+	//		g.lx = sin(g.angleH);
+	//		g.lz = -cos(g.angleH);
+	//g.x += (g.lx-1.0f) * g.velx;
+	g.velx += 0.02f;
+	if (g.velx > 0.08f)
+	    g.velx = 0.08f;
+	g.velz += 0.02f;
+	if (g.velz > 0.08f)
+	    g.velz = 0.08f;
 
 	g.x += g.lx * g.velx;
 	g.z += g.lz * g.velz;
-	if (g.velx < 0.0f)
-	    g.velx += 0.004f;
-	else if (g.velx > 0.0f)
-	    g.velx -= 0.004f;
-
-	if (g.velz < 0.0f)
-	    g.velz += 0.004f;
-	else if (g.velz > 0.0f)
-	    g.velz -= 0.004f;
-
-	if (g.velx >= -0.005f && g.velx <= 0.005f)
-	    g.velx = 0.0f;
-
-	if (g.velz >= -0.005f && g.velz <= 0.005f)
-	    g.velz = 0.0f;
-
-
+    }
+    if (g.key_states & g.s_mask) {
+	g.velx -= 0.02f;
+	if (g.velx < -0.08f)
+	    g.velx = -0.08f;
+	g.velz -= 0.02f;
+	if (g.velz < -0.08f)
+	    g.velz = -0.08f;
+	g.x += g.lx * g.velx;
+	g.z += g.lz * g.velz;
 
     }
+    if (g.key_states & g.d_mask) {
+	//		g.angleH += 0.020f;
+	//		g.lx = sin(g.angleH);
+	//		g.lz = -cos(g.angleH);
+	//g.x += (g.lx+1.0f) * g.velx;
+	g.velx -= 0.02f;
+	if (g.velx < -0.08f)
+	    g.velx = -0.08f;
+	g.velz -= 0.02f;
+	if (g.velz < -0.08f)
+	    g.velz = -0.08f;
 
-    void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
-    {
-	image = ppm6GetImage(imagePath);
-	glGenTextures(1, texture);
-
-	// Image
-	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3,
-		image->width, image->height,
-		0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
+	g.x += g.lx * g.velx;
+	g.z += g.lz * g.velz;
     }
 
-    unsigned char *buildAlphaData(Ppmimage *img) {
-	int i, a, b, c;
-	unsigned char *newdata, *ptr;
-	unsigned char *data = (unsigned char *) img->data;
-	newdata = (unsigned char *)malloc(img->width * img->height * 4);
-	ptr = newdata;
-	for (i = 0; i<img->width * img->height * 3; i+=3) {
-	    a = *(data+0);
-	    b = *(data+1);
-	    c = *(data+2);
-	    *(ptr+0) = a;
-	    *(ptr+1) = b;
-	    *(ptr+2) = c;
-	    *(ptr+3) = (a|b|c);
-	    ptr += 4;
-	    data += 3;
-	}
-	return newdata;
+    //	g.x += g.lx * g.velx;
+    //	g.z += g.lz * g.velz;
+    if (g.velx < 0.0f)
+	g.velx += 0.004f;
+    else if (g.velx > 0.0f)
+	g.velx -= 0.004f;
+
+    if (g.velz < 0.0f)
+	g.velz += 0.004f;
+    else if (g.velz > 0.0f)
+	g.velz -= 0.004f;
+
+    if (g.velx >= -0.005f && g.velx <= 0.005f)
+	g.velx = 0.0f;
+
+    if (g.velz >= -0.005f && g.velz <= 0.005f)
+	g.velz = 0.0f;
+
+
+
+}
+
+void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
+{
+    image = ppm6GetImage(imagePath);
+    glGenTextures(1, texture);
+
+    // Image
+    glBindTexture(GL_TEXTURE_2D, *texture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3,
+	    image->width, image->height,
+	    0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
+}
+
+unsigned char *buildAlphaData(Ppmimage *img) {
+    int i, a, b, c;
+    unsigned char *newdata, *ptr;
+    unsigned char *data = (unsigned char *) img->data;
+    newdata = (unsigned char *)malloc(img->width * img->height * 4);
+    ptr = newdata;
+    for (i = 0; i<img->width * img->height * 3; i+=3) {
+	a = *(data+0);
+	b = *(data+1);
+	c = *(data+2);
+	*(ptr+0) = a;
+	*(ptr+1) = b;
+	*(ptr+2) = c;
+	*(ptr+3) = (a|b|c);
+	ptr += 4;
+	data += 3;
     }
+    return newdata;
+}
 
-    void init_alpha_image(char * imagePath, Ppmimage * image,
-	    GLuint * texture, GLuint * silhouette)
-    {
-	image = ppm6GetImage(imagePath);
-	glGenTextures(1, silhouette);
-	glGenTextures(1, texture);
+void init_alpha_image(char * imagePath, Ppmimage * image,
+	GLuint * texture, GLuint * silhouette)
+{
+    image = ppm6GetImage(imagePath);
+    glGenTextures(1, silhouette);
+    glGenTextures(1, texture);
 
-	// Image
-	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3,
-		image->width, image->height,
-		0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
+    // Image
+    glBindTexture(GL_TEXTURE_2D, *texture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3,
+	    image->width, image->height,
+	    0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
 
-	// Alpha
-	glBindTexture(GL_TEXTURE_2D,*silhouette);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    // Alpha
+    glBindTexture(GL_TEXTURE_2D,*silhouette);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 
-	unsigned char *silhouetteData = buildAlphaData(image);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		image->width, image->height,
-		0, GL_RGBA, GL_UNSIGNED_BYTE, silhouetteData);
-	free(silhouetteData);
-    }
+    unsigned char *silhouetteData = buildAlphaData(image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+	    image->width, image->height,
+	    0, GL_RGBA, GL_UNSIGNED_BYTE, silhouetteData);
+    free(silhouetteData);
+}
 
 
-    void render()
-    {
-	//Clear the depth buffer and screen.
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	//
-	//Render a 3D scene
-	//
-	glEnable(GL_LIGHTING);
-	glMatrixMode(GL_PROJECTION); glLoadIdentity();
-	gluPerspective(45.0f, g.aspectRatio, 0.1f, 100.0f);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	// Camera that can move on x&z and look on x,y,&z
-	gluLookAt(g.x, 0.0f, g.z,
-		g.x+g.lx, g.y+g.ly, g.z+g.lz,
-		0.0f, 1.0f, 0.0f);
+void render()
+{
+    //Clear the depth buffer and screen.
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    //
+    //Render a 3D scene
+    //
+    glEnable(GL_LIGHTING);
+    glMatrixMode(GL_PROJECTION); glLoadIdentity();
+    gluPerspective(45.0f, g.aspectRatio, 0.1f, 100.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    // Camera that can move on x&z and look on x,y,&z
+    gluLookAt(g.x, 0.0f, g.z,
+	    g.x+(g.lx), g.y+g.ly, g.z+g.lz,
+	    0.0f, 1.0f, 0.0f);
 
-	glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
-	//
-	drawFloor();
-	drawWall();
-	drawEnemy();
-	//    drawBox();
-	//    drawWall();
-	//
-	//
-	//switch to 2D mode
-	//
-	Rect r;
-	glViewport(0, 0, g.xres, g.yres);
-	glMatrixMode(GL_MODELVIEW);   glLoadIdentity();
-	glMatrixMode (GL_PROJECTION); glLoadIdentity();
-	gluOrtho2D(0, g.xres, 0, g.yres);
-	glDisable(GL_LIGHTING);
-	r.bot = g.yres - 20;
-	r.left = 10;
-	r.center = 0;
-	ggprint8b(&r, 16, 0x00887766, "4490 OpenGL");
-	ggprint8b(&r, 16, 0x00887766, "Camera Info:");
-	ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.x, g.y, g.z);
-	ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.lx, g.ly, g.lz);
-	ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.velx, g.velz);
-	ggprint8b(&r, 16, 0x00887766, "Controls:");
-	ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
-	ggprint8b(&r, 16, 0x00887766, "    w/s: Move Forward/Backward");
-	ggprint8b(&r, 16, 0x00887766, "    a/d: Look Left/Right");
-	ggprint8b(&r, 16, 0x00887766, "    e/q: Strafe Left/Right");
-	ggprint8b(&r, 16, 0x00887766, "    c/z: Strafe Up/Down");
-    }
+    glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
+    //
+    drawFloor();
+    drawWall();
+    drawEnemy();
+    //    drawBox();
+    //    drawWall();
+    //
+    //
+    //switch to 2D mode
+    //
+    Rect r;
+    glViewport(0, 0, g.xres, g.yres);
+    glMatrixMode(GL_MODELVIEW);   glLoadIdentity();
+    glMatrixMode (GL_PROJECTION); glLoadIdentity();
+    gluOrtho2D(0, g.xres, 0, g.yres);
+    glDisable(GL_LIGHTING);
+    r.bot = g.yres - 20;
+    r.left = 10;
+    r.center = 0;
+    ggprint8b(&r, 16, 0x00887766, "4490 OpenGL");
+    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
+    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.x, g.y, g.z);
+    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.lx, g.ly, g.lz);
+    ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.velx, g.velz);
+    ggprint8b(&r, 16, 0x00887766, "Controls:");
+    ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
+    ggprint8b(&r, 16, 0x00887766, "    w/s: Move Forward/Backward");
+    ggprint8b(&r, 16, 0x00887766, "    a/d: Look Left/Right");
+    ggprint8b(&r, 16, 0x00887766, "    e/q: Strafe Left/Right");
+    ggprint8b(&r, 16, 0x00887766, "    c/z: Strafe Up/Down");
+}
 
 
 
