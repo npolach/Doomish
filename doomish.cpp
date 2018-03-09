@@ -748,18 +748,17 @@ void physics()
 	g.z += g.lz * g.velz;
     }
     if (g.key_states & g.a_mask) {
-	//		g.angleH -= 0.020f;
-	//		g.lx = sin(g.angleH);
-	//		g.lz = -cos(g.angleH);
-	//g.x += (g.lx-1.0f) * g.velx;
-	g.velx += 0.02f;
+	if (!(g.key_states & g.w_mask))
+	    g.velx += 0.02f;
+	//if (!(g.key_states & g.s_mask))
+	//    g.velx -= 0.02f;
 	if (g.velx > 0.08f)
 	    g.velx = 0.08f;
-	g.velz += 0.02f;
-	if (g.velz > 0.08f)
-	    g.velz = 0.08f;
+	//g.velz += 0.02f;
+	//if (g.velz > 0.08f)
+	//    g.velz = 0.08f;
 
-	g.x += g.lx * g.velx;
+	g.x += (g.lx-1.0) * g.velx;
 	g.z += g.lz * g.velz;
     }
     if (g.key_states & g.s_mask) {
@@ -774,18 +773,18 @@ void physics()
 
     }
     if (g.key_states & g.d_mask) {
-	//		g.angleH += 0.020f;
-	//		g.lx = sin(g.angleH);
-	//		g.lz = -cos(g.angleH);
-	//g.x += (g.lx+1.0f) * g.velx;
-	g.velx -= 0.02f;
+	if (!(g.key_states & g.w_mask))
+	    g.velx -= 0.02f;
+	//if (!(g.key_states & g.s_mask))
+	//    g.velx -= 0.02f;
 	if (g.velx < -0.08f)
 	    g.velx = -0.08f;
-	g.velz -= 0.02f;
-	if (g.velz < -0.08f)
-	    g.velz = -0.08f;
+	
+	//g.velz -= 0.02f;
+	//if (g.velz < -0.08f)
+	//    g.velz = -0.08f;
 
-	g.x += g.lx * g.velx;
+	g.x += (g.lx-1.0) * g.velx;
 	g.z += g.lz * g.velz;
     }
 
