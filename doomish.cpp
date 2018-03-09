@@ -108,7 +108,9 @@ class Global {
 	    d_mask = 0x08;
 
 	    //light is up high, right a little, toward a little
-	    MakeVector(100.0f, 240.0f, 40.0f, lightPosition);
+	    MakeVector(50.0f, 0.0f, 25.0f, lightPosition);
+	    //MakeVector(50.0f, 0.0f, -25.0f, lightPosition);
+	    //MakeVector(100.0f, 240.0f, 40.0f, lightPosition);
 	    lightPosition[3] = 1.0f;
 	}
 } g;
@@ -244,6 +246,14 @@ void imageClean()
     remove("./images/imp.ppm");
 }
 
+Flt toDegrees(Flt radians) {
+        return radians * (180.0 / M_PI);
+}
+
+Flt toRadians(Flt degrees) {
+    return (degrees * M_PI ) / 180;
+}
+
 void init_opengl();
 void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
@@ -360,19 +370,19 @@ void check_mouse(XEvent *e)
 	//if (++ct < 10)
 	//	return;
 	if (xdiff < 0) {
-	    g.angleH += 0.015f;
+	    g.angleH += 0.02f;
 	    g.lx = sin(g.angleH);
 	    g.lz = -cos(g.angleH);
 
 	}
 	else if (xdiff > 0) {
-	    g.angleH -= 0.015f;
+	    g.angleH -= 0.02f;
 	    g.lx = sin(g.angleH);
 	    g.lz = -cos(g.angleH);
 
 	}
 	if (ydiff < 0) {
-	    g.angleV -= 0.015f;
+	    g.angleV -= 0.02f;
 	    if (g.angleV < -1.0)
 		g.angleV = -1.0;
 
@@ -380,7 +390,7 @@ void check_mouse(XEvent *e)
 
 	}
 	if (ydiff > 0) {
-	    g.angleV += 0.015f;
+	    g.angleV += 0.02f;
 	    if (g.angleV > 1.0)
 		g.angleV = 1.0;
 	    g.ly = sin(g.angleV);
@@ -389,7 +399,7 @@ void check_mouse(XEvent *e)
 	x11.set_mouse_position(g.xres/2,g.yres/2);
 	savex = e->xbutton.x;
 	savey = e->xbutton.y;
-	skip = !skip;
+	//skip = !skip;
     }
 }
 
@@ -548,7 +558,18 @@ void drawFloor()
     glBindTexture(GL_TEXTURE_2D, floor1Texture);
     glBegin(GL_QUADS);
 
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f( w, h,-d+5);
 
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w, h,-d+5);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-w, h, d+5);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w, h, d+5);
+	//
     glTexCoord2f(1.0f, 0.0f);
     glVertex3f( w, h,-d);
 
@@ -560,7 +581,67 @@ void drawFloor()
 
     glTexCoord2f(1.0f, 1.0f);
     glVertex3f( w, h, d);
+	//
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f( w, h,-d-5);
 
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w, h,-d-5);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-w, h, d-5);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w, h, d-5);
+	//
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f( w, h,-d-10);
+
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w, h,-d-10);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-w, h, d-10);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w, h, d-10);
+    	//
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f( w, h,-d-15);
+
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w, h,-d-15);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-w, h, d-15);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w, h, d-15);
+	//
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f( w+5, h,-d-15);
+
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w+5, h,-d-15);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-w+5, h, d-15);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w+5, h, d-15);
+	//
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f( w+10, h,-d-15);
+
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-w+10, h,-d-15);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-w+10, h, d-15);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f( w+10, h, d-15);
+	//
 
     glEnd();
     glPopMatrix();
@@ -754,12 +835,15 @@ void physics()
 	//    g.velx -= 0.02f;
 	if (g.velx > 0.08f)
 	    g.velx = 0.08f;
+
 	//g.velz += 0.02f;
 	//if (g.velz > 0.08f)
 	//    g.velz = 0.08f;
 
 	g.x += (g.lx-1.0) * g.velx;
 	g.z += g.lz * g.velz;
+
+
     }
     if (g.key_states & g.s_mask) {
 	g.velx -= 0.02f;
@@ -892,7 +976,7 @@ void render()
     glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
     //
     drawFloor();
-    drawWall();
+    //drawWall();
     drawEnemy();
     //    drawBox();
     //    drawWall();
