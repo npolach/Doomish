@@ -538,11 +538,13 @@ void check_mouse(XEvent *e)
     //	return 0;
     //    }
 
-    void make_view_matrix(const Vec p1, const Vec p2, Matrix m)
+    void make_view_matrix(Vec p1, Vec p2, Matrix m)
     {
 	//Line between p1 and p2 form a LOS Line-of-sight.
 	//A rotation matrix is built to transform objects to this LOS.
 	//Diana Gruber  http://www.makegames.com/3Drotation/
+	//p1[1] = -.5;
+	p2[1] = 0;
 	m[0][0]=m[1][1]=m[2][2]=1.0f;
 	m[0][1]=m[0][2]=m[1][0]=m[1][2]=m[2][0]=m[2][1]=0.0f;
 	Vec out = { p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2] };
@@ -553,7 +555,7 @@ void check_mouse(XEvent *e)
 	} else {
 	    l1 = 1.0f / sqrtf(len);
 	    out[0] *= l1;
-	    //out[1] *= l1;
+	    out[1] *= l1;
 	    out[2] *= l1;
 	}
 	m[2][0] = out[0];
@@ -571,6 +573,7 @@ void check_mouse(XEvent *e)
 	    up[1] *= l1;
 	    up[2] *= l1;
 	}
+
 	//m[1][0] = up[0];
 	//m[1][1] = up[1];
 	//m[1][2] = up[2];
