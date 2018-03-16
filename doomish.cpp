@@ -56,6 +56,14 @@ GLuint floor1Texture;
 Ppmimage * wall1Image=NULL;
 GLuint wall1Texture;
 
+class Brute {
+    public:
+	Vec pos;
+	//Brute(x, z) {
+	//    MakeVector(x, 0.0, y, pos);
+	//}
+};
+
 class Global {
     public:
 	int xres, yres;
@@ -72,6 +80,9 @@ class Global {
 	unsigned char s_mask;
 	unsigned char d_mask;
 	GLfloat lightPosition[4];
+	Brute * brutes;
+	int nbrutes;
+
 	Global() {
 	    //constructor
 	    xres = 1024; 
@@ -105,6 +116,9 @@ class Global {
 	    //MakeVector(50.0f, 0.0f, -25.0f, lightPosition);
 	    //MakeVector(100.0f, 240.0f, 40.0f, lightPosition);
 	    lightPosition[3] = 1.0f;
+
+	    brutes = new Brute[100];
+	    nbrutes = 0;
 	}
 } g;
 
@@ -465,79 +479,6 @@ void check_mouse(XEvent *e)
 	return 0;
     }
 
-    //int check_keys(XEvent *e)
-    //{
-    //    static int shift = false;
-    //    //Was there input from the keyboard?
-    //    if (e->type != KeyPress && e->type != KeyRelease)
-    //	return 0;
-    //
-    //    int key = XLookupKeysym(&e->xkey, 0);
-    //    if (e->type == KeyRelease) {
-    //	if (key == XK_Shift_L || key == XK_Shift_R) {
-    //	    shift = false;
-    //	    return 0;
-    //	}
-    //    }
-    //
-    //    if (e->type == KeyPress) {
-    //	if (key == XK_Shift_L || key == XK_Shift_R) {
-    //	    shift = true;
-    //	    return 0;
-    //	}
-    //	//Was there input from the keyboard?
-    //	switch(key) {
-    //	    // Camera angle
-    //	    case XK_1:
-    //		break;
-    //	    case XK_w:
-    //		//if (shift) {
-    //		g.cameraVel[0] += 0.02f;
-    //		if (g.cameraVel[0] > 0.08f)
-    //		    g.cameraVel[0] = 0.08f;
-    //		g.cameraVel[2] += 0.02f;
-    //		if (g.cameraVel[2] > 0.08f)
-    //		    g.cameraVel[2] = 0.08f;
-    //		break;
-    //	    case XK_a:
-    //		g.angleH -= 0.020f;
-    //		g.cameraAng[0] = sin(g.angleH);
-    //		g.cameraAng[2] = -cos(g.angleH);
-    //		break;
-    //	    case XK_s:
-    //		g.cameraVel[0] -= 0.02f;
-    //		if (g.cameraVel[0] < -0.08f)
-    //		    g.cameraVel[0] = -0.08f;
-    //		g.cameraVel[2] -= 0.02f;
-    //		if (g.cameraVel[2] < -0.08f)
-    //		    g.cameraVel[2] = -0.08f;
-    //		break;
-    //	    case XK_d:
-    //		g.angleH += 0.020f;
-    //		g.cameraAng[0] = sin(g.angleH);
-    //		g.cameraAng[2] = -cos(g.angleH);
-    //		break;
-    //
-    //	    case XK_e:
-    //		g.cameraPos[0] += 0.02f;
-    //		break;
-    //	    case XK_q:
-    //		g.cameraPos[0] -= 0.02f;
-    //		break;
-    //	    case XK_c:
-    //		g.cameraPos[1] += 0.02f;
-    //		break;
-    //	    case XK_z:
-    //		g.cameraPos[1] -= 0.02f;
-    //		break;
-    //
-    //	    case XK_Escape:
-    //		return 1;
-    //	}
-    //	}
-    //	return 0;
-    //    }
-
     void make_view_matrix(Vec p1, Vec p2, Matrix m)
     {
 	//Line between p1 and p2 form a LOS Line-of-sight.
@@ -712,48 +653,158 @@ void check_mouse(XEvent *e)
 
 	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
 	glPushMatrix();
-	glTranslated(0, 0, -2);
+	glTranslated(1.5, 1.5, 5);
+	//glTranslated(0, 0, -2);
 	glRotatef(90, 1, 0, 0);
-	//	glRotatef(90, 0, 0, 1);
+	glRotatef(90, 0, 0, 1);
 	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
 	glBindTexture(GL_TEXTURE_2D, wall1Texture);
 	glBegin(GL_QUADS);
 
-	//	glTexCoord2f(0.0f, 1.0f);
-	//	glVertex3f( w, h,-d);
-	//
-	//	glTexCoord2f(0.0f, 0.0f);
-	//	glVertex3f(-w, h,-d);
-	//
-	//	glTexCoord2f(1.0f, 0.0f);
-	//	glVertex3f(-w, h, d);
-	//
-	//	glTexCoord2f(1.0f, 1.0f);
-	//	glVertex3f( w, h, d);
-
-	//
-	glTranslated(0, 1, 0);
-	glRotatef(-90, 0, 0, 1);
-
-	//glTexCoord2f(0.0f, 1.0f);
+	// Right Walls
 	glTexCoord2f(1.0f, 0.0f);
 	glVertex3f( w, h,-d);
 
-	//glTexCoord2f(0.0f, 0.0f);
 	glTexCoord2f(0.0f, 0.0f);
 	glVertex3f(-w, h,-d);
 
-	//glTexCoord2f(1.0f, 0.0f);
 	glTexCoord2f(0.0f, 1.0f);
 	glVertex3f(-w, h, d);
 
-	//glTexCoord2f(1.0f, 1.0f);
 	glTexCoord2f(1.0f, 1.0f);
 	glVertex3f( w, h, d);
+
+//	glTexCoord2f(1.0f, 0.0f);
+//	glVertex3f( w, h*4,-d);
+//
+//	glTexCoord2f(0.0f, 0.0f);
+//	glVertex3f(-w, h*4,-d);
+//
+//	glTexCoord2f(0.0f, 1.0f);
+//	glVertex3f(-w, h*4, d);
+//
+//	glTexCoord2f(1.0f, 1.0f);
+//	glVertex3f( w, h*4, d);
+
+        //
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-5, h,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-5, h,-d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-5, h, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-5, h, d);
+	//
+       	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-10, h,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-10, h,-d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-10, h, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-10, h, d);
+	//
+       	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-15, h,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-15, h,-d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-15, h, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-15, h, d);
+
+	// Left Walls
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w, h+5,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w, h+5,-d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w, h+5, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w, h+5, d);
+        //
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-5, h+5,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-5, h+5,-d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-5, h+5, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-5, h+5, d);
+        //
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-10, h+5,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-10, h+5,-d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-10, h+5, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-10, h+5, d);
+        //
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-15, h+5,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-15, h+5,-d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-15, h+5, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-15, h+5, d);
+        //
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-20, h+5,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-20, h+5,-d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-20, h+5, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-20, h+5, d);
 
 	glEnd();
 	glPopMatrix();
 	glBindTexture(GL_TEXTURE_2D, 0);
+
+        //
+	//glRotatef(90, 1, 1, 0);
+	//glBegin(GL_QUADS);
+	//glTexCoord2f(1.0f, 0.0f);
+	//glVertex3f( w-25, h+5,-d);
+
+	//glTexCoord2f(0.0f, 0.0f);
+	//glVertex3f(-w-25, h+5,-d);
+
+	//glTexCoord2f(0.0f, 1.0f);
+	//glVertex3f(-w-25, h+5, d);
+
+	//glTexCoord2f(1.0f, 1.0f);
+	//glVertex3f( w-25, h+5, d);
+	//glEnd();
+	//glPopMatrix();
+	//glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     void drawEnemy()
@@ -764,7 +815,8 @@ void check_mouse(XEvent *e)
 
 	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
 	glPushMatrix();
-	glTranslated(0, -0.5, 0);
+	// Check ttranslate to fix rotating around central point
+	//glTranslated(0, -0.5, 0);
 	Vec pos = {0, -0.5, 0};
 	//glRotatef(90, 1, 0, 0);
 	//glRotatef(270, 0, 1, 0);
@@ -801,6 +853,7 @@ void check_mouse(XEvent *e)
 
 	glRotatef(90, 1, 0, 0);
 	glBegin(GL_QUADS);
+	//glTranslated(0, -0.5, 0);
 
 	//glTexCoord2f(0.0f, 1.0f);
 	glTexCoord2f(1.0f, 0.0f);
@@ -1061,7 +1114,7 @@ void check_mouse(XEvent *e)
 	glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
 	//
 	drawFloor();
-	//drawWall();
+	drawWall();
 	drawEnemy();
 	//    drawBox();
 	//    drawWall();
