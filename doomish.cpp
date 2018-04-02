@@ -277,6 +277,7 @@ int main()
 {
     imageConvert();
     init_opengl();
+    init_enemies();
     int done=0;
     while (!done) {
 	while (x11.getXPending()) {
@@ -764,25 +765,28 @@ void check_mouse(XEvent *e)
 	// set the modelview with no rotations
 	glLoadMatrixf(modelview);
 
-	glRotatef(90, 1, 0, 0);
-	glTranslated(0.0, 0.0, 0.5);
-	glBegin(GL_QUADS);
+	for (int i = 0; i < g.nbrutes; i++) {
+	    glRotatef(90, 1, 0, 0);
+	    glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1], g.brutes[i].pos[2]);
+	    //glTranslated(0.0, 0.0, 0.5);
+	    glBegin(GL_QUADS);
 
-	//glTexCoord2f(0.0f, 1.0f);
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d);
+	    //glTexCoord2f(0.0f, 1.0f);
+	    glTexCoord2f(1.0f, 0.0f);
+	    glVertex3f( w, h,-d);
 
-	//glTexCoord2f(0.0f, 0.0f);
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d);
+	    //glTexCoord2f(0.0f, 0.0f);
+	    glTexCoord2f(0.0f, 0.0f);
+	    glVertex3f(-w, h,-d);
 
-	//glTexCoord2f(1.0f, 0.0f);
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d);
+	    //glTexCoord2f(1.0f, 0.0f);
+	    glTexCoord2f(0.0f, 1.0f);
+	    glVertex3f(-w, h, d);
 
-	//glTexCoord2f(1.0f, 1.0f);
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d);
+	    //glTexCoord2f(1.0f, 1.0f);
+	    glTexCoord2f(1.0f, 1.0f);
+	    glVertex3f( w, h, d);
+	}
 
 	glEnd();
 	glPopMatrix();
