@@ -297,10 +297,10 @@ int main()
 
 void init_enemies()
 {
-	    MakeVector(0.0, 0.0, 1.0, g.brutes[0].pos);
-	    MakeVector(0.0, 0.0, 5.0, g.brutes[1].pos);
-	    MakeVector(0.0, 5.0, 5.0, g.brutes[2].pos);
-	    g.nbrutes = 3;
+    MakeVector(0.0, 0.0, 0.5, g.brutes[0].pos);
+    MakeVector(1.0, 2.0, 0.5, g.brutes[1].pos);
+    MakeVector(-1.0, 3.0, 0.5, g.brutes[2].pos);
+    g.nbrutes = 3;
 }
 
 
@@ -490,23 +490,23 @@ void check_mouse(XEvent *e)
 	return 0;
     }
 
-//    void vecNormalize(Vec v)
-//    {
-//	Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-//	if (len == 0.0)
-//	    return;
-//	len = 1.0 / sqrt(len);
-//	v[0] *= len;
-//	v[1] *= len;
-//	v[2] *= len;
-//    }
-//
-//    void vecScale(Vec v, Flt s)
-//    {
-//	v[0] *= s;
-//	v[1] *= s;
-//	v[2] *= s;
-//    }
+    //    void vecNormalize(Vec v)
+    //    {
+    //	Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+    //	if (len == 0.0)
+    //	    return;
+    //	len = 1.0 / sqrt(len);
+    //	v[0] *= len;
+    //	v[1] *= len;
+    //	v[2] *= len;
+    //    }
+    //
+    //    void vecScale(Vec v, Flt s)
+    //    {
+    //	v[0] *= s;
+    //	v[1] *= s;
+    //	v[2] *= s;
+    //    }
 
 
     void drawFloor()
@@ -567,7 +567,64 @@ void check_mouse(XEvent *e)
 	glPopMatrix();
 	glBindTexture(GL_TEXTURE_2D, 0);
     }
+    void make_view_matrix(Vec p1, Vec p2, Matrix m)
+    {
+	//Line between p1 and p2 form a LOS Line-of-sight.
+	//	//A rotation matrix is built to transform objects to this LOS.
+	//		//Diana Gruber  http://www.makegames.com/3Drotation/
+	//p1[1] = -.5;
+	p2[1] = 0;
+	m[0][0]=m[1][1]=m[2][2]=1.0f;
+	m[0][1]=m[0][2]=m[1][0]=m[1][2]=m[2][0]=m[2][1]=0.0f;
+	Vec out = { p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2] };
+	//
+	Flt l1, len = out[0]*out[0] + out[1]*out[1] + out[2]*out[2];
+	if (len == 0.0f) {
+	    MakeVector(0.0f,0.0f,1.0f,out);
+	} else {
+	    l1 = 1.0f / sqrtf(len);
+	    out[0] *= l1;
+	    //out[1] *= l1;
+	    out[2] *= l1;
+	}
+	m[2][0] = out[0];
+	//m[2][1] = out[1];
+	m[2][2] = out[2];
+	Vec up = { -out[1] * out[0], upv[1] - out[1] * out[1], -out[1] * out[2] };
+	//
+	len = up[0]*up[0] + up[1]*up[1] + up[2]*up[2];
+	if (len == 0.0f) {
+	    MakeVector(0.0f,0.0f,1.0f,up);
+	}
+	else {
+	    l1 = 1.0f / sqrtf(len);
+	    up[0] *= l1;
+	    up[1] *= l1;
+	    up[2] *= l1;
+	}
 
+	//make left vector.
+	VecCross(up, out, m[0]);
+    }
+
+
+    void vecNormalize(Vec v)
+    {
+	Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+	if (len == 0.0)
+	    return;
+	len = 1.0 / sqrt(len);
+	v[0] *= len;
+	v[1] *= len;
+	v[2] *= len;
+    }
+
+    void vecScale(Vec v, Flt s)
+    {
+	v[0] *= s;
+	v[1] *= s;
+	v[2] *= s;
+    }
     void drawWall()
     {
 	Flt w = 2.5;
@@ -743,31 +800,39 @@ void check_mouse(XEvent *e)
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
 
+	///// Billboarding
+	//Setup camera rotation matrix
+	//
+	Vec v;
+	Vec pos = {0, 0.0, 0};
+	VecSub(pos, g.cameraPos, v);
+	Vec z = {0.0f, 0.0f, 0.0f};
+	make_view_matrix(z, v, g.cameraMatrix);
+	//
+	//Billboard_to_camera();
+	//
+	float mat[16];
+	mat[ 0] = g.cameraMatrix[0][0];
+	mat[ 1] = g.cameraMatrix[0][1];
+	mat[ 2] = g.cameraMatrix[0][2];
+	mat[ 4] = g.cameraMatrix[1][0];
+	mat[ 5] = g.cameraMatrix[1][1];
+	mat[ 6] = g.cameraMatrix[1][2];
+	mat[ 8] = g.cameraMatrix[2][0];
+	mat[ 9] = g.cameraMatrix[2][1];
+	mat[10] = g.cameraMatrix[2][2];
+	mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	mat[15] = 1.0f;
+	glMultMatrixf(mat);
+	//
+	///// End Billboarding
 
-	////// Billboarding
-	// get the current modelview matrix
-	float modelview[16];
+	//for (int i = 0; i < g.nbrutes; i++) {
 
-	// save the current modelview matrix
-	glPushMatrix();
-	glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
-
-	// undo all rotations
-	// beware all scaling is lost as well 
-	for(int i=0; i<3; i++ ) 
-	    for(int j=0; j<3; j++ ) {
-		if ( i==j )
-		    modelview[i*4+j] = 1.0;
-		else
-		    modelview[i*4+j] = 0.0;
-	    }
-
-	// set the modelview with no rotations
-	glLoadMatrixf(modelview);
-
-	for (int i = 0; i < g.nbrutes; i++) {
+	int i = 0;
 	    glRotatef(90, 1, 0, 0);
 	    glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1], g.brutes[i].pos[2]);
+	    printf("Pos[0]=%f;Pos[1]=%f;Pos[2]=%f", g.brutes[0].pos[0], g.brutes[0].pos[1], g.brutes[0].pos[2]);
 	    //glTranslated(0.0, 0.0, 0.5);
 	    glBegin(GL_QUADS);
 
@@ -786,7 +851,7 @@ void check_mouse(XEvent *e)
 	    //glTexCoord2f(1.0f, 1.0f);
 	    glTexCoord2f(1.0f, 1.0f);
 	    glVertex3f( w, h, d);
-	}
+	//}
 
 	glEnd();
 	glPopMatrix();
