@@ -261,6 +261,7 @@ Flt toRadians(Flt degrees) {
     return (degrees * M_PI ) / 180;
 }
 
+void init_enemies();
 void init_opengl();
 void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
@@ -292,6 +293,15 @@ int main()
     imageClean();
     return 0;
 }
+
+void init_enemies()
+{
+	    MakeVector(0.0, 0.0, 1.0, g.brutes[0].pos);
+	    MakeVector(0.0, 0.0, 5.0, g.brutes[1].pos);
+	    MakeVector(0.0, 5.0, 5.0, g.brutes[2].pos);
+	    g.nbrutes = 3;
+}
+
 
 void init_opengl()
 {
@@ -479,64 +489,23 @@ void check_mouse(XEvent *e)
 	return 0;
     }
 
-    void make_view_matrix(Vec p1, Vec p2, Matrix m)
-    {
-	//Line between p1 and p2 form a LOS Line-of-sight.
-	//A rotation matrix is built to transform objects to this LOS.
-	//Diana Gruber  http://www.makegames.com/3Drotation/
-	//p1[1] = -.5;
-	p2[1] = 0;
-	m[0][0]=m[1][1]=m[2][2]=1.0f;
-	m[0][1]=m[0][2]=m[1][0]=m[1][2]=m[2][0]=m[2][1]=0.0f;
-	Vec out = { p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2] };
-	//
-	Flt l1, len = out[0]*out[0] + out[1]*out[1] + out[2]*out[2];
-	if (len == 0.0f) {
-	    MakeVector(0.0f,0.0f,1.0f,out);
-	} else {
-	    l1 = 1.0f / sqrtf(len);
-	    out[0] *= l1;
-	    //out[1] *= l1;
-	    out[2] *= l1;
-	}
-	m[2][0] = out[0];
-	//m[2][1] = out[1];
-	m[2][2] = out[2];
-	Vec up = { -out[1] * out[0], upv[1] - out[1] * out[1], -out[1] * out[2] };
-	//
-	len = up[0]*up[0] + up[1]*up[1] + up[2]*up[2];
-	if (len == 0.0f) {
-	    MakeVector(0.0f,0.0f,1.0f,up);
-	}
-	else {
-	    l1 = 1.0f / sqrtf(len);
-	    up[0] *= l1;
-	    up[1] *= l1;
-	    up[2] *= l1;
-	}
-
-	//make left vector.
-	VecCross(up, out, m[0]);
-    }
-
-
-    void vecNormalize(Vec v)
-    {
-	Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-	if (len == 0.0)
-	    return;
-	len = 1.0 / sqrt(len);
-	v[0] *= len;
-	v[1] *= len;
-	v[2] *= len;
-    }
-
-    void vecScale(Vec v, Flt s)
-    {
-	v[0] *= s;
-	v[1] *= s;
-	v[2] *= s;
-    }
+//    void vecNormalize(Vec v)
+//    {
+//	Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+//	if (len == 0.0)
+//	    return;
+//	len = 1.0 / sqrt(len);
+//	v[0] *= len;
+//	v[1] *= len;
+//	v[2] *= len;
+//    }
+//
+//    void vecScale(Vec v, Flt s)
+//    {
+//	v[0] *= s;
+//	v[1] *= s;
+//	v[2] *= s;
+//    }
 
 
     void drawFloor()
@@ -567,30 +536,30 @@ void check_mouse(XEvent *e)
 		glVertex3f( w+j, h, d-i);
 	    }
 	}
-//	// Side
-//	glTexCoord2f(1.0f, 0.0f);
-//	glVertex3f( w+5, h,-d-15);
-//
-//	glTexCoord2f(0.0f, 0.0f);
-//	glVertex3f(-w+5, h,-d-15);
-//
-//	glTexCoord2f(0.0f, 1.0f);
-//	glVertex3f(-w+5, h, d-15);
-//
-//	glTexCoord2f(1.0f, 1.0f);
-//	glVertex3f( w+5, h, d-15);
-//	//
-//	glTexCoord2f(1.0f, 0.0f);
-//	glVertex3f( w+10, h,-d-15);
-//
-//	glTexCoord2f(0.0f, 0.0f);
-//	glVertex3f(-w+10, h,-d-15);
-//
-//	glTexCoord2f(0.0f, 1.0f);
-//	glVertex3f(-w+10, h, d-15);
-//
-//	glTexCoord2f(1.0f, 1.0f);
-//	glVertex3f( w+10, h, d-15);
+	//	// Side
+	//	glTexCoord2f(1.0f, 0.0f);
+	//	glVertex3f( w+5, h,-d-15);
+	//
+	//	glTexCoord2f(0.0f, 0.0f);
+	//	glVertex3f(-w+5, h,-d-15);
+	//
+	//	glTexCoord2f(0.0f, 1.0f);
+	//	glVertex3f(-w+5, h, d-15);
+	//
+	//	glTexCoord2f(1.0f, 1.0f);
+	//	glVertex3f( w+5, h, d-15);
+	//	//
+	//	glTexCoord2f(1.0f, 0.0f);
+	//	glVertex3f( w+10, h,-d-15);
+	//
+	//	glTexCoord2f(0.0f, 0.0f);
+	//	glVertex3f(-w+10, h,-d-15);
+	//
+	//	glTexCoord2f(0.0f, 1.0f);
+	//	glVertex3f(-w+10, h, d-15);
+	//
+	//	glTexCoord2f(1.0f, 1.0f);
+	//	glVertex3f( w+10, h, d-15);
 	//
 
 	glEnd();
@@ -627,19 +596,19 @@ void check_mouse(XEvent *e)
 	glTexCoord2f(1.0f, 1.0f);
 	glVertex3f( w, h, d);
 
-//	glTexCoord2f(1.0f, 0.0f);
-//	glVertex3f( w, h*4,-d);
-//
-//	glTexCoord2f(0.0f, 0.0f);
-//	glVertex3f(-w, h*4,-d);
-//
-//	glTexCoord2f(0.0f, 1.0f);
-//	glVertex3f(-w, h*4, d);
-//
-//	glTexCoord2f(1.0f, 1.0f);
-//	glVertex3f( w, h*4, d);
+	//	glTexCoord2f(1.0f, 0.0f);
+	//	glVertex3f( w, h*4,-d);
+	//
+	//	glTexCoord2f(0.0f, 0.0f);
+	//	glVertex3f(-w, h*4,-d);
+	//
+	//	glTexCoord2f(0.0f, 1.0f);
+	//	glVertex3f(-w, h*4, d);
+	//
+	//	glTexCoord2f(1.0f, 1.0f);
+	//	glVertex3f( w, h*4, d);
 
-        //
+	//
 	glTexCoord2f(1.0f, 0.0f);
 	glVertex3f( w-5, h,-d);
 
@@ -652,7 +621,7 @@ void check_mouse(XEvent *e)
 	glTexCoord2f(1.0f, 1.0f);
 	glVertex3f( w-5, h, d);
 	//
-       	glTexCoord2f(1.0f, 0.0f);
+	glTexCoord2f(1.0f, 0.0f);
 	glVertex3f( w-10, h,-d);
 
 	glTexCoord2f(0.0f, 0.0f);
@@ -664,7 +633,7 @@ void check_mouse(XEvent *e)
 	glTexCoord2f(1.0f, 1.0f);
 	glVertex3f( w-10, h, d);
 	//
-       	glTexCoord2f(1.0f, 0.0f);
+	glTexCoord2f(1.0f, 0.0f);
 	glVertex3f( w-15, h,-d);
 
 	glTexCoord2f(0.0f, 0.0f);
@@ -688,7 +657,7 @@ void check_mouse(XEvent *e)
 
 	glTexCoord2f(1.0f, 1.0f);
 	glVertex3f( w, h+5, d);
-        //
+	//
 	glTexCoord2f(1.0f, 0.0f);
 	glVertex3f( w-5, h+5,-d);
 
@@ -700,7 +669,7 @@ void check_mouse(XEvent *e)
 
 	glTexCoord2f(1.0f, 1.0f);
 	glVertex3f( w-5, h+5, d);
-        //
+	//
 	glTexCoord2f(1.0f, 0.0f);
 	glVertex3f( w-10, h+5,-d);
 
@@ -712,7 +681,7 @@ void check_mouse(XEvent *e)
 
 	glTexCoord2f(1.0f, 1.0f);
 	glVertex3f( w-10, h+5, d);
-        //
+	//
 	glTexCoord2f(1.0f, 0.0f);
 	glVertex3f( w-15, h+5,-d);
 
@@ -724,7 +693,7 @@ void check_mouse(XEvent *e)
 
 	glTexCoord2f(1.0f, 1.0f);
 	glVertex3f( w-15, h+5, d);
-        //
+	//
 	glTexCoord2f(1.0f, 0.0f);
 	glVertex3f( w-20, h+5,-d);
 
@@ -741,7 +710,7 @@ void check_mouse(XEvent *e)
 	glPopMatrix();
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-        //
+	//
 	//glRotatef(90, 1, 1, 0);
 	//glBegin(GL_QUADS);
 	//glTexCoord2f(1.0f, 0.0f);
@@ -768,12 +737,6 @@ void check_mouse(XEvent *e)
 
 	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
 	glPushMatrix();
-	// Check ttranslate to fix rotating around central point
-	//glTranslated(0, -0.5, 0);
-	Vec pos = {0, 0.0, 0};
-	//Vec pos = {0, -0.5, 0};
-	//glRotatef(90, 1, 0, 0);
-	//glRotatef(270, 0, 1, 0);
 	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
 	glBindTexture(GL_TEXTURE_2D, impSilhouette);
 	glEnable(GL_ALPHA_TEST);
@@ -781,31 +744,25 @@ void check_mouse(XEvent *e)
 
 
 	////// Billboarding
-	//
-	//Setup camera rotation matrix
-	//
-	Vec v;
-	VecSub(pos, g.cameraPos, v);
-	Vec z = {0.0f, 0.0f, 0.0f};
-	make_view_matrix(z, v, g.cameraMatrix);
-	//
-	//Billboard_to_camera();
-	//
-	float mat[16];
-	mat[ 0] = g.cameraMatrix[0][0];
-	mat[ 1] = g.cameraMatrix[0][1];
-	mat[ 2] = g.cameraMatrix[0][2];
-	mat[ 4] = g.cameraMatrix[1][0];
-	mat[ 5] = g.cameraMatrix[1][1];
-	mat[ 6] = g.cameraMatrix[1][2];
-	mat[ 8] = g.cameraMatrix[2][0];
-	mat[ 9] = g.cameraMatrix[2][1];
-	mat[10] = g.cameraMatrix[2][2];
-	mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
-	mat[15] = 1.0f;
-	glMultMatrixf(mat);
-	//
-	// END Billboarding
+	// get the current modelview matrix
+	float modelview[16];
+
+	// save the current modelview matrix
+	glPushMatrix();
+	glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
+
+	// undo all rotations
+	// beware all scaling is lost as well 
+	for(int i=0; i<3; i++ ) 
+	    for(int j=0; j<3; j++ ) {
+		if ( i==j )
+		    modelview[i*4+j] = 1.0;
+		else
+		    modelview[i*4+j] = 0.0;
+	    }
+
+	// set the modelview with no rotations
+	glLoadMatrixf(modelview);
 
 	glRotatef(90, 1, 0, 0);
 	glTranslated(0.0, 0.0, 0.5);
@@ -832,82 +789,6 @@ void check_mouse(XEvent *e)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
     }
-
-
-
-    //void drawBox()
-    //{
-    //    glColor3f(0.2f, 0.7f, 1.0f);
-    //    box(3.0, 0.2, 3.0);
-    //}
-
-    //void drawWall()
-    //{
-    //    //
-    //    //   dimensions are 1.0 x 1.0
-    //    //
-    //    //   0--------------1--------2--------------3
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   4--------------5--------6--------------7
-    //    //   |              |        |              |
-    //    //   |              |  hole  |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   8--------------9--------10-------------11
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   |              |        |              |
-    //    //   12-------------13-------14-------------15
-    //    //
-    //    //
-    //    //draw a wall with a hole in it.
-    //    float vert[16][3] = {
-    //	-.5, .5, 0,
-    //	-.1, .5, 0,
-    //	.1, .5, 0,
-    //	.5, .5, 0,
-    //	-.5, .1, 0,
-    //	-.1, .1, 0,
-    //	.1, .1, 0,
-    //	.5, .1, 0,
-    //	-.5,-.1, 0,
-    //	-.1,-.1, 0,
-    //	.1,-.1, 0,
-    //	.5,-.1, 0,
-    //	-.5,-.5, 0,
-    //	-.1,-.5, 0,
-    //	.1,-.5, 0,
-    //	.5,-.5, 0 };
-    //    const int n = 21;
-    //    int idx[n] = {0,4,1,5,2,6,3,7,6,11,10,15,14,10,13,9,12,8,9,4,5};
-    //    glColor3f(1.0f, 0.0f, 0.0f);
-    //    glPushMatrix();
-    //    glTranslated(0.0, 1.0, 0.0);
-    //    glBegin(GL_TRIANGLE_STRIP);
-    //    glNormal3f( 0.0f, 0.0f, 1.0f);
-    //    for (int i=0; i<n; i++)
-    //	glVertex3fv(vert[idx[i]]);
-    //    glEnd();
-    //    glPopMatrix();
-    //
-    //    glColor3f(1.0f, 1.0f, 0.0f);
-    //    glPushMatrix();
-    //    glTranslated(0.0, 1.0, -0.1);
-    //    glBegin(GL_TRIANGLE_STRIP);
-    //    glNormal3f( 0.0f, 0.0f, 1.0f);
-    //    for (int i=0; i<n; i++)
-    //	glVertex3fv(vert[idx[i]]);
-    //    glEnd();
-    //    glPopMatrix();
-    //}
 
     void physics()
     {
