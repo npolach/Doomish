@@ -496,11 +496,11 @@ void check_mouse(XEvent *e)
 	} else {
 	    l1 = 1.0f / sqrtf(len);
 	    out[0] *= l1;
-	    out[1] *= l1;
+	    //out[1] *= l1;
 	    out[2] *= l1;
 	}
 	m[2][0] = out[0];
-	m[2][1] = out[1];
+	//m[2][1] = out[1];
 	m[2][2] = out[2];
 	Vec up = { -out[1] * out[0], upv[1] - out[1] * out[1], -out[1] * out[2] };
 	//
@@ -515,9 +515,6 @@ void check_mouse(XEvent *e)
 	    up[2] *= l1;
 	}
 
-	//m[1][0] = up[0];
-	//m[1][1] = up[1];
-	//m[1][2] = up[2];
 	//make left vector.
 	VecCross(up, out, m[0]);
     }
@@ -550,94 +547,50 @@ void check_mouse(XEvent *e)
 
 	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
 	glPushMatrix();
-	glTranslated(0, 0, 0);
+	//glTranslated(0, 0, 0);
 	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
 	glBindTexture(GL_TEXTURE_2D, floor1Texture);
 	glBegin(GL_QUADS);
 
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d+5);
+	for (int i = 0; i < 25; i+=5) {
+	    for (int j = 0; j <25; j+=5) {
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f( w+j, h,-d-i);
 
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d+5);
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(-w+j, h,-d-i);
 
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d+5);
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(-w+j, h, d-i);
 
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d+5);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d-5);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d-5);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d-5);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d-5);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d-10);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d-10);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d-10);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d-10);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d-15);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d-15);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d-15);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d-15);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w+5, h,-d-15);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w+5, h,-d-15);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w+5, h, d-15);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w+5, h, d-15);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w+10, h,-d-15);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w+10, h,-d-15);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w+10, h, d-15);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w+10, h, d-15);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f( w+j, h, d-i);
+	    }
+	}
+//	// Side
+//	glTexCoord2f(1.0f, 0.0f);
+//	glVertex3f( w+5, h,-d-15);
+//
+//	glTexCoord2f(0.0f, 0.0f);
+//	glVertex3f(-w+5, h,-d-15);
+//
+//	glTexCoord2f(0.0f, 1.0f);
+//	glVertex3f(-w+5, h, d-15);
+//
+//	glTexCoord2f(1.0f, 1.0f);
+//	glVertex3f( w+5, h, d-15);
+//	//
+//	glTexCoord2f(1.0f, 0.0f);
+//	glVertex3f( w+10, h,-d-15);
+//
+//	glTexCoord2f(0.0f, 0.0f);
+//	glVertex3f(-w+10, h,-d-15);
+//
+//	glTexCoord2f(0.0f, 1.0f);
+//	glVertex3f(-w+10, h, d-15);
+//
+//	glTexCoord2f(1.0f, 1.0f);
+//	glVertex3f( w+10, h, d-15);
 	//
 
 	glEnd();
@@ -811,13 +764,14 @@ void check_mouse(XEvent *e)
     {
 	Flt w = 0.5;
 	Flt d = 0.5;
-	Flt h = -1.0;
+	Flt h = 0.0;
 
 	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
 	glPushMatrix();
 	// Check ttranslate to fix rotating around central point
 	//glTranslated(0, -0.5, 0);
-	Vec pos = {0, -0.5, 0};
+	Vec pos = {0, 0.0, 0};
+	//Vec pos = {0, -0.5, 0};
 	//glRotatef(90, 1, 0, 0);
 	//glRotatef(270, 0, 1, 0);
 	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
@@ -826,6 +780,7 @@ void check_mouse(XEvent *e)
 	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
 
 
+	////// Billboarding
 	//
 	//Setup camera rotation matrix
 	//
@@ -850,10 +805,11 @@ void check_mouse(XEvent *e)
 	mat[15] = 1.0f;
 	glMultMatrixf(mat);
 	//
+	// END Billboarding
 
 	glRotatef(90, 1, 0, 0);
+	glTranslated(0.0, 0.0, 0.5);
 	glBegin(GL_QUADS);
-	//glTranslated(0, -0.5, 0);
 
 	//glTexCoord2f(0.0f, 1.0f);
 	glTexCoord2f(1.0f, 0.0f);
@@ -1114,7 +1070,7 @@ void check_mouse(XEvent *e)
 	glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
 	//
 	drawFloor();
-	drawWall();
+	//drawWall();
 	drawEnemy();
 	//    drawBox();
 	//    drawWall();
