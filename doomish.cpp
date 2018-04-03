@@ -50,6 +50,10 @@ Ppmimage * impImage;
 GLuint impTexture;
 GLuint impSilhouette;
 
+Ppmimage * flierImage;
+GLuint flierTexture;
+GLuint flierSilhouette;
+
 Ppmimage * floor1Image=NULL;
 GLuint floor1Texture;
 
@@ -62,6 +66,11 @@ class Brute {
 	//Brute(x, z) {
 	//    MakeVector(x, 0.0, y, pos);
 	//}
+};
+
+class Flier {
+    public:
+	Vec pos;
 };
 
 class Global {
@@ -82,6 +91,9 @@ class Global {
 	GLfloat lightPosition[4];
 	Brute * brutes;
 	int nbrutes;
+	Flier * fliers;
+	int nfliers;
+
 
 	Global() {
 	    //constructor
@@ -119,6 +131,9 @@ class Global {
 
 	    brutes = new Brute[100];
 	    nbrutes = 0;
+	    fliers = new Flier[100];
+	    nfliers = 0;
+
 	}
 } g;
 
@@ -243,6 +258,7 @@ void imageConvert()
     system("mogrify -format ppm ./images/floor1.jpg");
     system("mogrify -format ppm ./images/wall1.jpg");
     system("mogrify -format ppm ./images/imp.jpg");
+    system("mogrify -format ppm ./images/flier.jpg");
 }
 
 void imageClean()
@@ -301,6 +317,12 @@ void init_enemies()
     MakeVector(1.0, 0.0, 0.5, g.brutes[1].pos);
     MakeVector(-1.0, 0.0, 0.5, g.brutes[2].pos);
     g.nbrutes = 3;
+
+    MakeVector(0.0, 1.2, 0.5, g.fliers[0].pos);
+    MakeVector(1.0, 1.2, 0.5, g.fliers[1].pos);
+    MakeVector(-1.0, 1.2, 0.5, g.fliers[2].pos);
+    g.nfliers = 3;
+
 }
 
 
@@ -326,9 +348,14 @@ void init_opengl()
     glEnable(GL_TEXTURE_2D);
     initialize_fonts();
 
-    // Initialize rocket image
+    // Initialize brute image
     init_alpha_image((char *)"./images/imp.ppm",
 	    impImage, &impTexture, &impSilhouette);
+
+    // Initialize flier image
+    init_alpha_image((char *)"./images/flier.ppm",
+	    flierImage, &flierTexture, &flierSilhouette);
+
 
     // Initialize floor images
     init_image((char *)"./images/floor1.ppm",
@@ -522,46 +549,21 @@ void check_mouse(XEvent *e)
 	glBindTexture(GL_TEXTURE_2D, floor1Texture);
 	glBegin(GL_QUADS);
 
-	for (int i = 0; i < 25; i+=5) {
-	    for (int j = 0; j <25; j+=5) {
+	for (int i = 0; i < 40; i+=5) {
+	    for (int j = 0; j <40; j+=5) {
 		glTexCoord2f(1.0f, 0.0f);
-		glVertex3f( w+j, h,-d-i);
+		glVertex3f( w-20+j, h,-d+5-i);
 
 		glTexCoord2f(0.0f, 0.0f);
-		glVertex3f(-w+j, h,-d-i);
+		glVertex3f(-w-20+j, h,-d+5-i);
 
 		glTexCoord2f(0.0f, 1.0f);
-		glVertex3f(-w+j, h, d-i);
+		glVertex3f(-w-20+j, h, d+5-i);
 
 		glTexCoord2f(1.0f, 1.0f);
-		glVertex3f( w+j, h, d-i);
+		glVertex3f( w-20+j, h, d+5-i);
 	    }
 	}
-	//	// Side
-	//	glTexCoord2f(1.0f, 0.0f);
-	//	glVertex3f( w+5, h,-d-15);
-	//
-	//	glTexCoord2f(0.0f, 0.0f);
-	//	glVertex3f(-w+5, h,-d-15);
-	//
-	//	glTexCoord2f(0.0f, 1.0f);
-	//	glVertex3f(-w+5, h, d-15);
-	//
-	//	glTexCoord2f(1.0f, 1.0f);
-	//	glVertex3f( w+5, h, d-15);
-	//	//
-	//	glTexCoord2f(1.0f, 0.0f);
-	//	glVertex3f( w+10, h,-d-15);
-	//
-	//	glTexCoord2f(0.0f, 0.0f);
-	//	glVertex3f(-w+10, h,-d-15);
-	//
-	//	glTexCoord2f(0.0f, 1.0f);
-	//	glVertex3f(-w+10, h, d-15);
-	//
-	//	glTexCoord2f(1.0f, 1.0f);
-	//	glVertex3f( w+10, h, d-15);
-	//
 
 	glEnd();
 	glPopMatrix();
@@ -787,7 +789,7 @@ void check_mouse(XEvent *e)
 	//glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    void drawEnemy()
+    void drawBrutes()
     {
 	Flt w = 0.5;
 	Flt d = 0.5;
@@ -808,13 +810,12 @@ void check_mouse(XEvent *e)
 	    glEnable(GL_ALPHA_TEST);
 	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
 
-	    glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1], g.brutes[i].pos[2]);
+	    glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1]-.5, g.brutes[i].pos[2]);
 	    ///// Billboarding
 	    //Setup camera rotation matrix
 	    //
 	    Vec v;
-	    Vec pos = {0, 0.0, 0};
-	    VecSub(pos, g.cameraPos, v);
+	    VecSub(g.brutes[i].pos, g.cameraPos, v);
 	    Vec z = {0.0f, 0.0f, 0.0f};
 	    make_view_matrix(z, v, g.cameraMatrix);
 	    //
@@ -862,6 +863,76 @@ void check_mouse(XEvent *e)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
     }
+
+    void drawFliers()
+    {
+	Flt w = 0.35;
+	Flt d = 0.35;
+	Flt h = 0.0;
+
+	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+	for (int i = 0; i < g.nbrutes; i++) {
+
+	    glPushMatrix();
+	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	    glBindTexture(GL_TEXTURE_2D, flierSilhouette);
+	    glEnable(GL_ALPHA_TEST);
+	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+
+	    glTranslated(g.fliers[i].pos[0], g.fliers[i].pos[1]-.5, g.fliers[i].pos[2]);
+	    ///// Billboarding
+	    //Setup camera rotation matrix
+	    //
+	    Vec v;
+	    VecSub(g.fliers[i].pos, g.cameraPos, v);
+	    Vec z = {0.0f, 0.0f, 0.0f};
+	    make_view_matrix(z, v, g.cameraMatrix);
+	    //
+	    //Billboard_to_camera();
+	    //
+	    float mat[16];
+	    mat[ 0] = g.cameraMatrix[0][0];
+	    mat[ 1] = g.cameraMatrix[0][1];
+	    mat[ 2] = g.cameraMatrix[0][2];
+	    mat[ 4] = g.cameraMatrix[1][0];
+	    mat[ 5] = g.cameraMatrix[1][1];
+	    mat[ 6] = g.cameraMatrix[1][2];
+	    mat[ 8] = g.cameraMatrix[2][0];
+	    mat[ 9] = g.cameraMatrix[2][1];
+	    mat[10] = g.cameraMatrix[2][2];
+	    mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	    mat[15] = 1.0f;
+	    glMultMatrixf(mat);
+	    //
+	    ///// End Billboarding
+
+	    glRotatef(90, 1, 0, 0);
+	    //glTranslated(0.0, 0.0, 0.5);
+	    glBegin(GL_QUADS);
+
+	    //glTexCoord2f(0.0f, 1.0f);
+	    glTexCoord2f(1.0f, 0.0f);
+	    glVertex3f( w, h,-d);
+
+	    //glTexCoord2f(0.0f, 0.0f);
+	    glTexCoord2f(0.0f, 0.0f);
+	    glVertex3f(-w, h,-d);
+
+	    //glTexCoord2f(1.0f, 0.0f);
+	    glTexCoord2f(0.0f, 1.0f);
+	    glVertex3f(-w, h, d);
+
+	    //glTexCoord2f(1.0f, 1.0f);
+	    glTexCoord2f(1.0f, 1.0f);
+	    glVertex3f( w, h, d);
+
+	    glEnd();
+	    glPopMatrix();
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_ALPHA_TEST);
+    }
+
 
     void physics()
     {
@@ -1025,7 +1096,8 @@ void check_mouse(XEvent *e)
 	//
 	drawFloor();
 	//drawWall();
-	drawEnemy();
+	drawBrutes();
+	drawFliers();
 	//    drawBox();
 	//    drawWall();
 	//
