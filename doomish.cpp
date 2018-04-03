@@ -54,6 +54,10 @@ Ppmimage * flierImage;
 GLuint flierTexture;
 GLuint flierSilhouette;
 
+Ppmimage * portalImage;
+GLuint portalTexture;
+GLuint portalSilhouette;
+
 Ppmimage * floor1Image=NULL;
 GLuint floor1Texture;
 
@@ -63,12 +67,14 @@ GLuint wall1Texture;
 class Brute {
     public:
 	Vec pos;
-	//Brute(x, z) {
-	//    MakeVector(x, 0.0, y, pos);
-	//}
 };
 
 class Flier {
+    public:
+	Vec pos;
+};
+
+class Portal {
     public:
 	Vec pos;
 };
@@ -93,6 +99,9 @@ class Global {
 	int nbrutes;
 	Flier * fliers;
 	int nfliers;
+	Portal * portals;
+	int nportals;
+
 
 
 	Global() {
@@ -133,6 +142,9 @@ class Global {
 	    nbrutes = 0;
 	    fliers = new Flier[100];
 	    nfliers = 0;
+	    portals = new Portal[10];
+	    nportals = 0;
+
 
 	}
 } g;
@@ -253,12 +265,16 @@ void imageConvert()
     remove("./images/floor1.ppm");
     remove("./images/wall1.ppm");
     remove("./images/imp.ppm");
+    remove("./images/flier.ppm");
+    remove("./images/portal.ppm");
+
     //
     //    //convert images to ppm
     system("mogrify -format ppm ./images/floor1.jpg");
     system("mogrify -format ppm ./images/wall1.jpg");
     system("mogrify -format ppm ./images/imp.jpg");
     system("mogrify -format ppm ./images/flier.jpg");
+    system("mogrify -format ppm ./images/portal.jpg");
 }
 
 void imageClean()
@@ -267,6 +283,9 @@ void imageClean()
     remove("./images/floor1.ppm");
     remove("./images/wall1.ppm");
     remove("./images/imp.ppm");
+    remove("./images/imp.ppm");
+    remove("./images/flier.ppm");
+    remove("./images/portal.ppm");
 }
 
 Flt toDegrees(Flt radians) {
@@ -278,6 +297,7 @@ Flt toRadians(Flt degrees) {
 }
 
 void init_enemies();
+void init_portals();
 void init_opengl();
 void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
@@ -294,6 +314,7 @@ int main()
     imageConvert();
     init_opengl();
     init_enemies();
+    init_portals();
     int done=0;
     while (!done) {
 	while (x11.getXPending()) {
@@ -324,6 +345,16 @@ void init_enemies()
     g.nfliers = 3;
 
 }
+
+void init_portals()
+{
+    MakeVector(10.0, 0.0, 0, g.portals[0].pos);
+    MakeVector(10.0, 0.0, -30, g.portals[1].pos);
+    MakeVector(-20.0, 0.0, 0, g.portals[2].pos);
+    MakeVector(-20.0, 0.0, -30, g.portals[3].pos);
+    g.nportals = 4;
+}
+
 
 
 void init_opengl()
@@ -356,6 +387,9 @@ void init_opengl()
     init_alpha_image((char *)"./images/flier.ppm",
 	    flierImage, &flierTexture, &flierSilhouette);
 
+    // Initialize portal image
+    init_alpha_image((char *)"./images/portal.ppm",
+	    portalImage, &portalTexture, &portalSilhouette);
 
     // Initialize floor images
     init_image((char *)"./images/floor1.ppm",
@@ -549,8 +583,11 @@ void check_mouse(XEvent *e)
 	glBindTexture(GL_TEXTURE_2D, floor1Texture);
 	glBegin(GL_QUADS);
 
-	for (int i = 0; i < 40; i+=5) {
-	    for (int j = 0; j <40; j+=5) {
+	for (int i = 0; i < 45; i+=5) {
+	    for (int j = 0; j <45; j+=5) {
+//	for (int i = 0; i < 40; i+=5) {
+//	    for (int j = 0; j <40; j+=5) {
+
 		glTexCoord2f(1.0f, 0.0f);
 		glVertex3f( w-20+j, h,-d+5-i);
 
@@ -569,13 +606,101 @@ void check_mouse(XEvent *e)
 	glPopMatrix();
 	glBindTexture(GL_TEXTURE_2D, 0);
     }
+
+    void drawWall()
+    {
+	Flt w = 2.5;
+	Flt d = 2.5;
+	Flt h = -1.0;
+
+	//Front&Back Walls
+	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+	glPushMatrix();
+	glTranslated(1.5, 1.5, 5);
+	glRotatef(90, 1, 0, 0);
+	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, wall1Texture);
+	glBegin(GL_QUADS);
+	for (int i = 0; i < 45; i+=5) {
+
+		// Back Walls
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f( w-i+18.5, h+3.5, -d);
+	    
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(-w-i+18.5, h+3.5, -d);
+	    
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(-w-i+18.5, h+3.5, d);
+	    
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f( w-i+18.5, h+3.5, d);
+
+		// Front Walls
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f( w-i+18.5, h-41.5, -d);
+	    
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(-w-i+18.5, h-41.5, -d);
+	    
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(-w-i+18.5, h-41.5, d);
+	    
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f( w-i+18.5, h-41.5, d);
+	}
+	glEnd();
+	glPopMatrix();
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	//Left&Right Walls
+	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+	glPushMatrix();
+	glTranslated(1.5, 1.5, 5);
+	glRotatef(90, 1, 0, 0);
+	glRotatef(90, 0, 0, 1);
+	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, wall1Texture);
+	glBegin(GL_QUADS);
+
+	for (int i = 0; i < 45; i+=5) {
+		// Left Walls
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f( w-i, h+25 ,-d);
+	    
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(-w-i, h+25, -d);
+	    
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(-w-i, h+25, d);
+	    
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f( w-i, h+25, d);
+
+		// Right Walls
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f( w-i, h-20 ,-d);
+	    
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(-w-i, h-20, -d);
+	    
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(-w-i, h-20, d);
+	    
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f( w-i, h-20, d);
+	}
+
+	glEnd();
+	glPopMatrix();
+	glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
     void make_view_matrix(Vec p1, Vec p2, Matrix m)
     {
 	//Line between p1 and p2 form a LOS Line-of-sight.
 	//	//A rotation matrix is built to transform objects to this LOS.
 	//		//Diana Gruber  http://www.makegames.com/3Drotation/
-	//p1[1] = -.5;
-	p2[1] = 0;
 	m[0][0]=m[1][1]=m[2][2]=1.0f;
 	m[0][1]=m[0][2]=m[1][0]=m[1][2]=m[2][0]=m[2][1]=0.0f;
 	Vec out = { p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2] };
@@ -626,167 +751,6 @@ void check_mouse(XEvent *e)
 	v[0] *= s;
 	v[1] *= s;
 	v[2] *= s;
-    }
-    void drawWall()
-    {
-	Flt w = 2.5;
-	Flt d = 2.5;
-	Flt h = -1.0;
-
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	glPushMatrix();
-	glTranslated(1.5, 1.5, 5);
-	//glTranslated(0, 0, -2);
-	glRotatef(90, 1, 0, 0);
-	glRotatef(90, 0, 0, 1);
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, wall1Texture);
-	glBegin(GL_QUADS);
-
-	// Right Walls
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h, d);
-
-	//	glTexCoord2f(1.0f, 0.0f);
-	//	glVertex3f( w, h*4,-d);
-	//
-	//	glTexCoord2f(0.0f, 0.0f);
-	//	glVertex3f(-w, h*4,-d);
-	//
-	//	glTexCoord2f(0.0f, 1.0f);
-	//	glVertex3f(-w, h*4, d);
-	//
-	//	glTexCoord2f(1.0f, 1.0f);
-	//	glVertex3f( w, h*4, d);
-
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w-5, h,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w-5, h,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w-5, h, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w-5, h, d);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w-10, h,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w-10, h,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w-10, h, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w-10, h, d);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w-15, h,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w-15, h,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w-15, h, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w-15, h, d);
-
-	// Left Walls
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w, h+5,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w, h+5,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w, h+5, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w, h+5, d);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w-5, h+5,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w-5, h+5,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w-5, h+5, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w-5, h+5, d);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w-10, h+5,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w-10, h+5,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w-10, h+5, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w-10, h+5, d);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w-15, h+5,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w-15, h+5,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w-15, h+5, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w-15, h+5, d);
-	//
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3f( w-20, h+5,-d);
-
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3f(-w-20, h+5,-d);
-
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3f(-w-20, h+5, d);
-
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3f( w-20, h+5, d);
-
-	glEnd();
-	glPopMatrix();
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	//
-	//glRotatef(90, 1, 1, 0);
-	//glBegin(GL_QUADS);
-	//glTexCoord2f(1.0f, 0.0f);
-	//glVertex3f( w-25, h+5,-d);
-
-	//glTexCoord2f(0.0f, 0.0f);
-	//glVertex3f(-w-25, h+5,-d);
-
-	//glTexCoord2f(0.0f, 1.0f);
-	//glVertex3f(-w-25, h+5, d);
-
-	//glTexCoord2f(1.0f, 1.0f);
-	//glVertex3f( w-25, h+5, d);
-	//glEnd();
-	//glPopMatrix();
-	//glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     void drawBrutes()
@@ -932,6 +896,76 @@ void check_mouse(XEvent *e)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
     }
+
+    void drawPortals()
+    {
+	Flt w = 1.5;
+	Flt d = 1.5;
+	Flt h = 0.0;
+
+	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+	for (int i = 0; i < g.nportals; i++) {
+
+	    glPushMatrix();
+	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	    glBindTexture(GL_TEXTURE_2D, portalSilhouette);
+	    glEnable(GL_ALPHA_TEST);
+	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+
+	    glTranslated(g.portals[i].pos[0], g.portals[i].pos[1]+.4, g.portals[i].pos[2]);
+	    ///// Billboarding
+	    //Setup camera rotation matrix
+	    //
+	    Vec v;
+	    VecSub(g.portals[i].pos, g.cameraPos, v);
+	    Vec z = {0.0f, 0.0f, 0.0f};
+	    make_view_matrix(z, v, g.cameraMatrix);
+	    //
+	    //Billboard_to_camera();
+	    //
+	    float mat[16];
+	    mat[ 0] = g.cameraMatrix[0][0];
+	    mat[ 1] = g.cameraMatrix[0][1];
+	    mat[ 2] = g.cameraMatrix[0][2];
+	    mat[ 4] = g.cameraMatrix[1][0];
+	    mat[ 5] = g.cameraMatrix[1][1];
+	    mat[ 6] = g.cameraMatrix[1][2];
+	    mat[ 8] = g.cameraMatrix[2][0];
+	    mat[ 9] = g.cameraMatrix[2][1];
+	    mat[10] = g.cameraMatrix[2][2];
+	    mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	    mat[15] = 1.0f;
+	    glMultMatrixf(mat);
+	    //
+	    ///// End Billboarding
+
+	    glRotatef(90, 1, 0, 0);
+	    //glTranslated(0.0, 0.0, 0.5);
+	    glBegin(GL_QUADS);
+
+	    //glTexCoord2f(0.0f, 1.0f);
+	    glTexCoord2f(1.0f, 0.0f);
+	    glVertex3f( w, h,-d);
+
+	    //glTexCoord2f(0.0f, 0.0f);
+	    glTexCoord2f(0.0f, 0.0f);
+	    glVertex3f(-w, h,-d);
+
+	    //glTexCoord2f(1.0f, 0.0f);
+	    glTexCoord2f(0.0f, 1.0f);
+	    glVertex3f(-w, h, d);
+
+	    //glTexCoord2f(1.0f, 1.0f);
+	    glTexCoord2f(1.0f, 1.0f);
+	    glVertex3f( w, h, d);
+
+	    glEnd();
+	    glPopMatrix();
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_ALPHA_TEST);
+    }
+
 
 
     void physics()
@@ -1095,7 +1129,8 @@ void check_mouse(XEvent *e)
 	glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
 	//
 	drawFloor();
-	//drawWall();
+	drawWall();
+	drawPortals();
 	drawBrutes();
 	drawFliers();
 	//    drawBox();
