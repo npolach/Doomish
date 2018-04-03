@@ -298,8 +298,8 @@ int main()
 void init_enemies()
 {
     MakeVector(0.0, 0.0, 0.5, g.brutes[0].pos);
-    MakeVector(1.0, 2.0, 0.5, g.brutes[1].pos);
-    MakeVector(-1.0, 3.0, 0.5, g.brutes[2].pos);
+    MakeVector(1.0, 0.0, 0.5, g.brutes[1].pos);
+    MakeVector(-1.0, 0.0, 0.5, g.brutes[2].pos);
     g.nbrutes = 3;
 }
 
@@ -794,45 +794,49 @@ void check_mouse(XEvent *e)
 	Flt h = 0.0;
 
 	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	glPushMatrix();
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, impSilhouette);
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+//	glPushMatrix();
+//	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+//	glBindTexture(GL_TEXTURE_2D, impSilhouette);
+//	glEnable(GL_ALPHA_TEST);
+//	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
 
-	///// Billboarding
-	//Setup camera rotation matrix
-	//
-	Vec v;
-	Vec pos = {0, 0.0, 0};
-	VecSub(pos, g.cameraPos, v);
-	Vec z = {0.0f, 0.0f, 0.0f};
-	make_view_matrix(z, v, g.cameraMatrix);
-	//
-	//Billboard_to_camera();
-	//
-	float mat[16];
-	mat[ 0] = g.cameraMatrix[0][0];
-	mat[ 1] = g.cameraMatrix[0][1];
-	mat[ 2] = g.cameraMatrix[0][2];
-	mat[ 4] = g.cameraMatrix[1][0];
-	mat[ 5] = g.cameraMatrix[1][1];
-	mat[ 6] = g.cameraMatrix[1][2];
-	mat[ 8] = g.cameraMatrix[2][0];
-	mat[ 9] = g.cameraMatrix[2][1];
-	mat[10] = g.cameraMatrix[2][2];
-	mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
-	mat[15] = 1.0f;
-	glMultMatrixf(mat);
-	//
-	///// End Billboarding
+	for (int i = 0; i < g.nbrutes; i++) {
 
-	//for (int i = 0; i < g.nbrutes; i++) {
+	    glPushMatrix();
+	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	    glBindTexture(GL_TEXTURE_2D, impSilhouette);
+	    glEnable(GL_ALPHA_TEST);
+	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
 
-	int i = 0;
-	    glRotatef(90, 1, 0, 0);
 	    glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1], g.brutes[i].pos[2]);
-	    printf("Pos[0]=%f;Pos[1]=%f;Pos[2]=%f", g.brutes[0].pos[0], g.brutes[0].pos[1], g.brutes[0].pos[2]);
+	    ///// Billboarding
+	    //Setup camera rotation matrix
+	    //
+	    Vec v;
+	    Vec pos = {0, 0.0, 0};
+	    VecSub(pos, g.cameraPos, v);
+	    Vec z = {0.0f, 0.0f, 0.0f};
+	    make_view_matrix(z, v, g.cameraMatrix);
+	    //
+	    //Billboard_to_camera();
+	    //
+	    float mat[16];
+	    mat[ 0] = g.cameraMatrix[0][0];
+	    mat[ 1] = g.cameraMatrix[0][1];
+	    mat[ 2] = g.cameraMatrix[0][2];
+	    mat[ 4] = g.cameraMatrix[1][0];
+	    mat[ 5] = g.cameraMatrix[1][1];
+	    mat[ 6] = g.cameraMatrix[1][2];
+	    mat[ 8] = g.cameraMatrix[2][0];
+	    mat[ 9] = g.cameraMatrix[2][1];
+	    mat[10] = g.cameraMatrix[2][2];
+	    mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	    mat[15] = 1.0f;
+	    glMultMatrixf(mat);
+	    //
+	    ///// End Billboarding
+
+	    glRotatef(90, 1, 0, 0);
 	    //glTranslated(0.0, 0.0, 0.5);
 	    glBegin(GL_QUADS);
 
@@ -851,10 +855,10 @@ void check_mouse(XEvent *e)
 	    //glTexCoord2f(1.0f, 1.0f);
 	    glTexCoord2f(1.0f, 1.0f);
 	    glVertex3f( w, h, d);
-	//}
 
-	glEnd();
-	glPopMatrix();
+	    glEnd();
+	    glPopMatrix();
+	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
     }
