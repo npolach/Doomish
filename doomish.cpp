@@ -70,11 +70,13 @@ GLuint wall1Texture;
 class Brute {
     public:
 	Vec pos;
+	Vec vel;
 };
 
 class Flier {
     public:
 	Vec pos;
+	Vec vel;
 };
 
 // From smoke lab
@@ -389,6 +391,10 @@ void init_enemies()
     MakeVector(0.0, 0.0, 0.5, g.brutes[0].pos);
     MakeVector(1.0, 0.0, 0.5, g.brutes[1].pos);
     MakeVector(-1.0, 0.0, 0.5, g.brutes[2].pos);
+    MakeVector(0.0, 0.0, 0.0, g.brutes[0].vel);
+    MakeVector(0.0, 0.0, 0.0, g.brutes[1].vel);
+    MakeVector(0.0, 0.0, 0.0, g.brutes[2].vel);
+
     g.nbrutes = 3;
 
     MakeVector(0.0, 1.2, 0.5, g.fliers[0].pos);
@@ -1107,6 +1113,7 @@ void check_mouse(XEvent *e)
     void physics()
     {
 
+	// Player movement
 	if (g.key_states & g.w_mask) {
 	    g.cameraVel[0] += 0.02f;
 	    if (g.cameraVel[0] > 0.08f)
@@ -1197,6 +1204,26 @@ void check_mouse(XEvent *e)
 
 	if (g.cameraVel[2] >= -0.005f && g.cameraVel[2] <= 0.005f)
 	    g.cameraVel[2] = 0.0f;
+
+	for (int i = 0; i < g.nbrutes; i++) {
+	    // Camera center - brute center
+	    Vec v;
+	    v[0] = g.cameraPos[0] - g.brutes[i].pos[0];
+	    v[1] = g.cameraPos[1] - g.brutes[i].pos[1];
+	    v[2] = g.cameraPos[2] - g.brutes[i].pos[2];
+	    g.brutes[i].vel[0] += v[0]*.00001;
+	    g.brutes[i].vel[1] += v[1]*.00001;
+	    g.brutes[i].vel[2] += v[2]*.00001;
+
+	    //g.brutes[i].vel[0] += v[0]*.00005;
+	    //g.brutes[i].vel[1] += v[1]*.00005;
+	    //g.brutes[i].vel[2] += v[2]*.00005;
+
+
+	    g.brutes[i].pos[0] += g.brutes[i].vel[0];
+	    g.brutes[i].pos[1] += g.brutes[i].vel[1];
+	    g.brutes[i].pos[2] += g.brutes[i].vel[2];
+	}
 
 	/////// From smoke lab
 	//		clock_gettime(CLOCK_REALTIME, &g.smokeTime);
