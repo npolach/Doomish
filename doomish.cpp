@@ -196,7 +196,7 @@ class Camera {
 		}
 
 
-} cam;
+};
 
 class Brute {
 	public:
@@ -259,11 +259,7 @@ class Global {
 	public:
 		int xres, yres;
 		Flt aspectRatio;
-		Flt angleH;
-		Flt angleV;
-		Vec cameraPos;
-		Vec cameraVel;
-		Vec cameraAng;
+		Camera cam;
 		Matrix cameraMatrix;
 		unsigned char key_states;
 		unsigned char w_mask;
@@ -283,12 +279,7 @@ class Global {
 			xres = 1024; 
 			yres = 768;
 			aspectRatio = (GLfloat)xres / (GLfloat)yres;
-			angleH = 0.0;
-			angleV = 0.0;
-			//MakeVector(0.0, -0.48, 5.0, cameraPos);
-			MakeVector(0.0, 0.0, 5.0, cameraPos);
-			MakeVector(0.0, 0.0, 0.0, cameraVel);
-			MakeVector(sin(angleH), sin(angleV), -cos(angleH), cameraAng);
+			Camera cam;
 			// Masks for byte
 			// #7 = 0x80 = 1000 0000
 			// #6 = 0x40 = 0100 0000
@@ -308,8 +299,6 @@ class Global {
 
 			//light is up high, right a little, toward a little
 			MakeVector(50.0f, 0.0f, 25.0f, lightPosition);
-			//MakeVector(50.0f, 0.0f, -25.0f, lightPosition);
-			//MakeVector(100.0f, 240.0f, 40.0f, lightPosition);
 			lightPosition[3] = 1.0f;
 
 			brutes = new Brute[100];
@@ -486,9 +475,9 @@ void init_alpha_image(char * imagePath, Ppmimage * image,
 
 Flt distance(Smoke s) {
 
-	Flt dist = ((s.pos[0] - g.cameraPos[0])*(s.pos[0] - g.cameraPos[0])) +
-		((s.pos[1] - g.cameraPos[1])*(s.pos[1] - g.cameraPos[1])) +
-		((s.pos[2] - g.cameraPos[2])*(s.pos[2] - g.cameraPos[2]));
+	Flt dist = ((s.pos[0] - g.cam.pos[0])*(s.pos[0] - g.cam.pos[0])) +
+		((s.pos[1] - g.cam.pos[1])*(s.pos[1] - g.cam.pos[1])) +
+		((s.pos[2] - g.cam.pos[2])*(s.pos[2] - g.cam.pos[2]));
 
 
 	return dist;
@@ -656,21 +645,21 @@ void check_mouse(XEvent *e)
 		//if (++ct < 10)
 		//	return;
 		if (xdiff < 0) {
-		    cam.lookLeft();
+		    g.cam.lookLeft();
 //			g.angleH += 0.02f;
 //			g.cameraAng[0] = sin(g.angleH);
 //			g.cameraAng[2] = -cos(g.angleH);
 
 		}
 		else if (xdiff > 0) {
-		    cam.lookRight();
+		    g.cam.lookRight();
 //			g.angleH -= 0.02f;
 //			g.cameraAng[0] = sin(g.angleH);
 //			g.cameraAng[2] = -cos(g.angleH);
 
 		}
 		if (ydiff < 0) {
-		    cam.lookUp();
+		    g.cam.lookUp();
 //			g.angleV -= 0.02f;
 //			if (g.angleV < -1.0)
 //				g.angleV = -1.0;
@@ -679,7 +668,7 @@ void check_mouse(XEvent *e)
 
 		}
 		if (ydiff > 0) {
-		    cam.lookDown();
+		    g.cam.lookDown();
 //			g.angleV += 0.02f;
 //			if (g.angleV > 1.0)
 //				g.angleV = 1.0;
@@ -740,19 +729,6 @@ void check_mouse(XEvent *e)
 					break;
 				case XK_d:
 					g.key_states = g.key_states|g.d_mask;
-					break;
-
-				case XK_e:
-					g.cameraPos[0] += 0.02f;
-					break;
-				case XK_q:
-					g.cameraPos[0] -= 0.02f;
-					break;
-				case XK_c:
-					g.cameraPos[1] += 0.02f;
-					break;
-				case XK_z:
-					g.cameraPos[1] -= 0.02f;
 					break;
 
 				case XK_Escape:
@@ -1017,7 +993,7 @@ void check_mouse(XEvent *e)
 			//Setup camera rotation matrix
 			//
 			Vec v;
-			VecSub(g.brutes[i].pos, g.cameraPos, v);
+			VecSub(g.brutes[i].pos, g.cam.pos, v);
 			Vec z = {0.0f, 0.0f, 0.0f};
 			make_view_matrix(z, v, g.cameraMatrix);
 			//
@@ -1086,7 +1062,7 @@ void check_mouse(XEvent *e)
 			//Setup camera rotation matrix
 			//
 			Vec v;
-			VecSub(g.fliers[i].pos, g.cameraPos, v);
+			VecSub(g.fliers[i].pos, g.cam.pos, v);
 			Vec z = {0.0f, 0.0f, 0.0f};
 			make_view_matrix(z, v, g.cameraMatrix);
 			//
@@ -1155,7 +1131,7 @@ void check_mouse(XEvent *e)
 			//Setup camera rotation matrix
 			//
 			Vec v;
-			VecSub(g.portals[i].pos, g.cameraPos, v);
+			VecSub(g.portals[i].pos, g.cam.pos, v);
 			Vec z = {0.0f, 0.0f, 0.0f};
 			make_view_matrix(z, v, g.cameraMatrix);
 			//
@@ -1261,124 +1237,69 @@ void check_mouse(XEvent *e)
 
 		// Player movement
 		if (g.key_states & g.w_mask) {
-			cam.moveForward();
-
-//
-//								g.cameraVel[0] += 0.02f;
-//								if (g.cameraVel[0] > 0.08f)
-//									g.cameraVel[0] = 0.08f;
-//								g.cameraVel[2] += 0.02f;
-//								if (g.cameraVel[2] > 0.08f)
-//									g.cameraVel[2] = 0.08f;
-//								g.cameraPos[0] += g.cameraAng[0] * g.cameraVel[0];
-//								g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
+		    if (g.cam.pos[2] > -37.4f) {
+			g.cam.moveForward();
+		    }
 		}
 		if (g.key_states & g.a_mask) {
-			cam.moveLeft();
-
-
-
-//
-//								if (!(g.key_states & g.w_mask))
-//									g.cameraVel[0] += 0.02f;
-//								//if (!(g.key_states & g.s_mask))
-//								//    g.cameraVel[0] -= 0.02f;
-//								if (g.cameraVel[0] > 0.08f)
-//									g.cameraVel[0] = 0.08f;
-//			
-//								//g.cameraVel[2] += 0.02f;
-//								//if (g.cameraVel[2] > 0.08f)
-//								//    g.cameraVel[2] = 0.08f;
-//			
-//								g.cameraPos[0] += (g.cameraAng[0]-1.0) * g.cameraVel[0];
-//								g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
-//			
-//
+		    if (g.cam.pos[0] > -22.4f) {
+			g.cam.moveLeft();
+		    }
 		}
 		if (g.key_states & g.s_mask) {
-			cam.moveBackward();
-
-
-
-
-			//g.cameraVel[0] -= 0.02f;
-			//if (g.cameraVel[0] < -0.08f)
-			//	g.cameraVel[0] = -0.08f;
-			//g.cameraVel[2] -= 0.02f;
-			//if (g.cameraVel[2] < -0.08f)
-			//	g.cameraVel[2] = -0.08f;
-			//g.cameraPos[0] += g.cameraAng[0] * g.cameraVel[0];
-			//g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
-
+		if (g.cam.pos[2] < 7.4f) {
+			g.cam.moveBackward();
+		}
 		}
 		if (g.key_states & g.d_mask) {
-			cam.moveRight();
-
-
-
-
-
-
-
-
-//			if (!(g.key_states & g.w_mask))
-//				g.cameraVel[0] -= 0.02f;
-//			//if (!(g.key_states & g.s_mask))
-//			//    g.cameraVel[0] -= 0.02f;
-//			if (g.cameraVel[0] < -0.08f)
-//				g.cameraVel[0] = -0.08f;
-//
-//			//g.cameraVel[2] -= 0.02f;
-//			//if (g.cameraVel[2] < -0.08f)
-//			//    g.cameraVel[2] = -0.08f;
-//
-//			g.cameraPos[0] += (g.cameraAng[0]-1.0) * g.cameraVel[0];
-//			g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
+			if (g.cam.pos[0] < 22.4f) {
+			g.cam.moveRight();
+			}
 		}
 
 		// Left/Right wall collision
-		if (g.cameraPos[0] < -22.4f) {
-			g.cameraPos[0] = -22.4f;
-			g.cameraVel[0] = 0;
-		} else if (g.cameraPos[0] > 22.4f) {
-			g.cameraPos[0] = 22.4;
-			g.cameraVel[0] = 0;
+		if (g.cam.pos[0] < -22.4f) {
+			g.cam.pos[0] = -22.4f;
+			g.cam.vel[0] = 0;
+		} else if (g.cam.pos[0] > 22.4f) {
+			g.cam.pos[0] = 22.4;
+			g.cam.vel[0] = 0;
 		}
 
 		// Back/Front wall collision
-		if (g.cameraPos[2] < -37.4f) {
-			g.cameraPos[2] = -37.4f;
-			g.cameraVel[2] = 0;
-		} else if (g.cameraPos[2] > 7.4f) {
-			g.cameraPos[2] = 7.4;
-			g.cameraVel[2] = 0;
+		if (g.cam.pos[2] < -37.4f) {
+			g.cam.pos[2] = -37.4f;
+			g.cam.vel[2] = 0;
+		} else if (g.cam.pos[2] > 7.4f) {
+			g.cam.pos[2] = 7.4;
+			g.cam.vel[2] = 0;
 		}
 
 
-		//	g.cameraPos[0] += g.cameraAng[0] * g.cameraVel[0];
-		//	g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
-		if (g.cameraVel[0] < 0.0f)
-			g.cameraVel[0] += 0.004f;
-		else if (g.cameraVel[0] > 0.0f)
-			g.cameraVel[0] -= 0.004f;
-
-		if (g.cameraVel[2] < 0.0f)
-			g.cameraVel[2] += 0.004f;
-		else if (g.cameraVel[2] > 0.0f)
-			g.cameraVel[2] -= 0.004f;
-
-		if (g.cameraVel[0] >= -0.005f && g.cameraVel[0] <= 0.005f)
-			g.cameraVel[0] = 0.0f;
-
-		if (g.cameraVel[2] >= -0.005f && g.cameraVel[2] <= 0.005f)
-			g.cameraVel[2] = 0.0f;
+		//	g.cam.pos[0] += g.cameraAng[0] * g.cam.vel[0];
+		//	g.cam.pos[2] += g.cameraAng[2] * g.cam.vel[2];
+//		if (g.cam.vel[0] < 0.0f)
+//			g.cam.vel[0] += 0.004f;
+//		else if (g.cam.vel[0] > 0.0f)
+//			g.cam.vel[0] -= 0.004f;
+//
+//		if (g.cam.vel[2] < 0.0f)
+//			g.cam.vel[2] += 0.004f;
+//		else if (g.cam.vel[2] > 0.0f)
+//			g.cam.vel[2] -= 0.004f;
+//
+//		if (g.cam.vel[0] >= -0.005f && g.cam.vel[0] <= 0.005f)
+//			g.cam.vel[0] = 0.0f;
+//
+//		if (g.cam.vel[2] >= -0.005f && g.cam.vel[2] <= 0.005f)
+//			g.cam.vel[2] = 0.0f;
 
 		for (int i = 0; i < g.nbrutes; i++) {
 			// Camera center - brute center
 			Vec v;
-			v[0] = g.cameraPos[0] - g.brutes[i].pos[0];
-			v[1] = g.cameraPos[1] - g.brutes[i].pos[1];
-			v[2] = g.cameraPos[2] - g.brutes[i].pos[2];
+			v[0] = g.cam.pos[0] - g.brutes[i].pos[0];
+			v[1] = g.cam.pos[1] - g.brutes[i].pos[1];
+			v[2] = g.cam.pos[2] - g.brutes[i].pos[2];
 
 			// Normalize vector
 			Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
@@ -1418,9 +1339,9 @@ void check_mouse(XEvent *e)
 		for (int i = 0; i < g.nfliers; i++) {
 			// Camera center - fliers center
 			Vec v;
-			v[0] = g.cameraPos[0] - g.fliers[i].pos[0];
-			v[1] = g.cameraPos[1] - g.fliers[i].pos[1];
-			v[2] = g.cameraPos[2] - g.fliers[i].pos[2];
+			v[0] = g.cam.pos[0] - g.fliers[i].pos[0];
+			v[1] = g.cam.pos[1] - g.fliers[i].pos[1];
+			v[2] = g.cam.pos[2] - g.fliers[i].pos[2];
 
 			// Normalize vector
 			Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
@@ -1522,7 +1443,7 @@ void check_mouse(XEvent *e)
 		//		    Flt x = cos(g.cameraAngle) * rad;
 		//		    Flt z = sin(g.cameraAngle) * rad;
 		//		    Flt y = 25.0;
-		//		    MakeVector(x, y, z, g.cameraPos);
+		//		    MakeVector(x, y, z, g.cam.pos);
 		//		    g.cameraAngle -= 0.01;
 		//		}
 
@@ -1608,16 +1529,9 @@ void check_mouse(XEvent *e)
 
 
 		// Camera that can move on x&z and look on x,y,&z
-//						gluLookAt(g.cameraPos[0], 0.0f, g.cameraPos[2],
-//						          g.cameraPos[0]+(g.cameraAng[0]), g.cameraPos[1]+g.cameraAng[1], g.cameraPos[2]+g.cameraAng[2],
-//						          0.0f, 1.0f, 0.0f);
-//
-//
-
-		gluLookAt(cam.pos[0] , 0.0f , cam.pos[2],
-		//gluLookAt(cam.pos[0] , cam.pos[1] , cam.pos[2],
-				cam.view[0], cam.view[1], cam.view[2],
-				cam.upv[0],  cam.upv[1], cam.upv[2]);
+		gluLookAt(g.cam.pos[0] , 0.0f , g.cam.pos[2],
+				g.cam.view[0], g.cam.view[1], g.cam.view[2],
+				g.cam.upv[0],  g.cam.upv[1], g.cam.upv[2]);
 
 		glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
 		//
@@ -1626,8 +1540,6 @@ void check_mouse(XEvent *e)
 		drawPortals();
 		drawBrutes();
 		drawFliers();
-		//    drawBox();
-		//    drawWall();
 		//
 		//
 		//switch to 2D mode
@@ -1643,12 +1555,9 @@ void check_mouse(XEvent *e)
 		r.center = 0;
 		ggprint8b(&r, 16, 0x00887766, "4490 OpenGL");
 		ggprint8b(&r, 16, 0x00887766, "Camera Info:");
-//		ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.cameraPos[0], g.cameraPos[1], g.cameraPos[2]);
-//		ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.cameraAng[0], g.cameraAng[1], g.cameraAng[2]);
-//		ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.cameraVel[0], g.cameraVel[2]);
-		ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", cam.pos[0], cam.pos[1], cam.pos[2]);
-		ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", cam.view[0], cam.view[1], cam.view[2]);
-		ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", cam.vel[0], cam.vel[2]);
+		ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.cam.pos[0], g.cam.pos[1], g.cam.pos[2]);
+		ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.cam.view[0], g.cam.view[1], g.cam.view[2]);
+		ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.cam.vel[0], g.cam.vel[2]);
 
 		ggprint8b(&r, 16, 0x00887766, "Controls:");
 		ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
