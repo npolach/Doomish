@@ -89,17 +89,41 @@ class Camera {
 			strafeSpeed = .10f;
 		}
 
+		bool wallCollide(Flt x, Flt z) {
+			bool collides = false;
+			// Left/Right wall collision
+			if (x < -22.4f) {
+				collides = true;
+			} else if (x > 22.4f) {
+				collides = true;
+			}
+
+			// Back/Front wall collision
+			if (z < -37.4f) {
+				collides = true;
+			} else if (z > 7.4f) {
+				collides = true;
+			}
+			return collides;
+		}
+
+
 		void moveForward() 
 		{
 
 			float viewX = view[0] - pos[0];
 			float viewZ = view[2] - pos[2];
 
-			pos[0] += viewX * moveSpeed;
-			pos[2] += viewZ * moveSpeed;
+			Flt newX = pos[0] + viewX * moveSpeed;
+			Flt newZ = pos[2] + viewZ * moveSpeed;
 
-			view[0] += viewX * moveSpeed;
-			view[2] += viewZ * moveSpeed;
+			if (!wallCollide(newX, newZ)) {
+				pos[0] = newX;
+				pos[2] = newZ;
+
+				view[0] += viewX * moveSpeed;
+				view[2] += viewZ * moveSpeed;
+			}
 
 		}
 
@@ -108,12 +132,16 @@ class Camera {
 			float viewX = view[0] - pos[0];
 			float viewZ = view[2] - pos[2];
 
-			pos[0] -= viewX * moveSpeed;
-			pos[2] -= viewZ * moveSpeed;
+			Flt newX = pos[0] - viewX * moveSpeed;
+			Flt newZ = pos[2] - viewZ * moveSpeed;
 
-			view[0] -= viewX * moveSpeed;
-			view[2] -= viewZ * moveSpeed;
+			if (!wallCollide(newX, newZ)) {
+				pos[0] = newX;
+				pos[2] = newZ;
 
+				view[0] -= viewX * moveSpeed;
+				view[2] -= viewZ * moveSpeed;
+			}
 		}
 
 		void moveLeft() 
@@ -133,11 +161,16 @@ class Camera {
 			y /= magnitude;
 			z /= magnitude;
 
-			pos[0] -= x*strafeSpeed;
-			pos[2] -= z*strafeSpeed;
+			Flt newX = pos[0] - x*strafeSpeed;
+			Flt newZ = pos[2] - z*strafeSpeed;
 
-			view[0] -= x*strafeSpeed;
-			view[2] -= z*strafeSpeed;
+			if (!wallCollide(newX, newZ)) {
+				pos[0] = newX;
+				pos[2] = newZ;
+
+				view[0] -= x*strafeSpeed;
+				view[2] -= z*strafeSpeed;
+			}
 		}
 
 		void moveRight() 
@@ -156,12 +189,19 @@ class Camera {
 			y /= magnitude;
 			z /= magnitude;
 
-			pos[0] += x*strafeSpeed;
-			pos[2] += z*strafeSpeed;
+			Flt newX = pos[0] + x*strafeSpeed;
+			Flt newZ = pos[2] + z*strafeSpeed;
 
-			view[0] += x*strafeSpeed;
-			view[2] += z*strafeSpeed;
+			if (!wallCollide(newX, newZ)) {
+
+				pos[0] = newX;
+				pos[2] = newZ;
+
+				view[0] += x*strafeSpeed;
+				view[2] += z*strafeSpeed;
+			}
 		}
+
 
 		void lookUp() 
 		{
@@ -645,37 +685,37 @@ void check_mouse(XEvent *e)
 		//if (++ct < 10)
 		//	return;
 		if (xdiff < 0) {
-		    g.cam.lookLeft();
-//			g.angleH += 0.02f;
-//			g.cameraAng[0] = sin(g.angleH);
-//			g.cameraAng[2] = -cos(g.angleH);
+			g.cam.lookLeft();
+			//			g.angleH += 0.02f;
+			//			g.cameraAng[0] = sin(g.angleH);
+			//			g.cameraAng[2] = -cos(g.angleH);
 
 		}
 		else if (xdiff > 0) {
-		    g.cam.lookRight();
-//			g.angleH -= 0.02f;
-//			g.cameraAng[0] = sin(g.angleH);
-//			g.cameraAng[2] = -cos(g.angleH);
+			g.cam.lookRight();
+			//			g.angleH -= 0.02f;
+			//			g.cameraAng[0] = sin(g.angleH);
+			//			g.cameraAng[2] = -cos(g.angleH);
 
 		}
 		if (ydiff < 0) {
-		    g.cam.lookUp();
-//			g.angleV -= 0.02f;
-//			if (g.angleV < -1.0)
-//				g.angleV = -1.0;
-//
-//			g.cameraAng[1] = sin(g.angleV);
+			g.cam.lookUp();
+			//			g.angleV -= 0.02f;
+			//			if (g.angleV < -1.0)
+			//				g.angleV = -1.0;
+			//
+			//			g.cameraAng[1] = sin(g.angleV);
 
 		}
 		if (ydiff > 0) {
-		    g.cam.lookDown();
-//			g.angleV += 0.02f;
-//			if (g.angleV > 1.0)
-//				g.angleV = 1.0;
-//			g.cameraAng[1] = sin(g.angleV);
+			g.cam.lookDown();
+			//			g.angleV += 0.02f;
+			//			if (g.angleV > 1.0)
+			//				g.angleV = 1.0;
+			//			g.cameraAng[1] = sin(g.angleV);
 
 		}
-		x11.set_mouse_position(g.xres/2,g.yres/2);
+		//x11.set_mouse_position(g.xres/2,g.yres/2);
 		savex = e->xbutton.x;
 		savey = e->xbutton.y;
 		//skip = !skip;
@@ -970,7 +1010,7 @@ void check_mouse(XEvent *e)
 	void drawBrutes()
 	{
 		Flt w = 0.5;
-		Flt d = 0.5;
+		Flt d = 0.75;
 		Flt h = 0.0;
 
 		glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
@@ -1237,62 +1277,62 @@ void check_mouse(XEvent *e)
 
 		// Player movement
 		if (g.key_states & g.w_mask) {
-		    if (g.cam.pos[2] > -37.4f) {
-			g.cam.moveForward();
-		    }
+			if (g.cam.pos[2] > -37.4f) {
+				g.cam.moveForward();
+			}
 		}
 		if (g.key_states & g.a_mask) {
-		    if (g.cam.pos[0] > -22.4f) {
-			g.cam.moveLeft();
-		    }
+			if (g.cam.pos[0] > -22.4f) {
+				g.cam.moveLeft();
+			}
 		}
 		if (g.key_states & g.s_mask) {
-		if (g.cam.pos[2] < 7.4f) {
-			g.cam.moveBackward();
-		}
+			if (g.cam.pos[2] < 7.4f) {
+				g.cam.moveBackward();
+			}
 		}
 		if (g.key_states & g.d_mask) {
 			if (g.cam.pos[0] < 22.4f) {
-			g.cam.moveRight();
+				g.cam.moveRight();
 			}
 		}
 
-		// Left/Right wall collision
-		if (g.cam.pos[0] < -22.4f) {
-			g.cam.pos[0] = -22.4f;
-			g.cam.vel[0] = 0;
-		} else if (g.cam.pos[0] > 22.4f) {
-			g.cam.pos[0] = 22.4;
-			g.cam.vel[0] = 0;
-		}
-
-		// Back/Front wall collision
-		if (g.cam.pos[2] < -37.4f) {
-			g.cam.pos[2] = -37.4f;
-			g.cam.vel[2] = 0;
-		} else if (g.cam.pos[2] > 7.4f) {
-			g.cam.pos[2] = 7.4;
-			g.cam.vel[2] = 0;
-		}
+		//		// Left/Right wall collision
+		//		if (g.cam.pos[0] < -22.4f) {
+		//			g.cam.pos[0] = -22.4f;
+		//			g.cam.vel[0] = 0;
+		//		} else if (g.cam.pos[0] > 22.4f) {
+		//			g.cam.pos[0] = 22.4;
+		//			g.cam.vel[0] = 0;
+		//		}
+		//
+		//		// Back/Front wall collision
+		//		if (g.cam.pos[2] < -37.4f) {
+		//			g.cam.pos[2] = -37.4f;
+		//			g.cam.vel[2] = 0;
+		//		} else if (g.cam.pos[2] > 7.4f) {
+		//			g.cam.pos[2] = 7.4;
+		//			g.cam.vel[2] = 0;
+		//		}
 
 
 		//	g.cam.pos[0] += g.cameraAng[0] * g.cam.vel[0];
 		//	g.cam.pos[2] += g.cameraAng[2] * g.cam.vel[2];
-//		if (g.cam.vel[0] < 0.0f)
-//			g.cam.vel[0] += 0.004f;
-//		else if (g.cam.vel[0] > 0.0f)
-//			g.cam.vel[0] -= 0.004f;
-//
-//		if (g.cam.vel[2] < 0.0f)
-//			g.cam.vel[2] += 0.004f;
-//		else if (g.cam.vel[2] > 0.0f)
-//			g.cam.vel[2] -= 0.004f;
-//
-//		if (g.cam.vel[0] >= -0.005f && g.cam.vel[0] <= 0.005f)
-//			g.cam.vel[0] = 0.0f;
-//
-//		if (g.cam.vel[2] >= -0.005f && g.cam.vel[2] <= 0.005f)
-//			g.cam.vel[2] = 0.0f;
+		//		if (g.cam.vel[0] < 0.0f)
+		//			g.cam.vel[0] += 0.004f;
+		//		else if (g.cam.vel[0] > 0.0f)
+		//			g.cam.vel[0] -= 0.004f;
+		//
+		//		if (g.cam.vel[2] < 0.0f)
+		//			g.cam.vel[2] += 0.004f;
+		//		else if (g.cam.vel[2] > 0.0f)
+		//			g.cam.vel[2] -= 0.004f;
+		//
+		//		if (g.cam.vel[0] >= -0.005f && g.cam.vel[0] <= 0.005f)
+		//			g.cam.vel[0] = 0.0f;
+		//
+		//		if (g.cam.vel[2] >= -0.005f && g.cam.vel[2] <= 0.005f)
+		//			g.cam.vel[2] = 0.0f;
 
 		for (int i = 0; i < g.nbrutes; i++) {
 			// Camera center - brute center
