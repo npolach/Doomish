@@ -72,33 +72,33 @@ class Camera {
 		Vec pos;
 		Vec vel;
 		Vec view;
+		Flt angleH;
+		Flt angleV;
 		Vec upv;
 		Flt moveSpeed;
 		Flt strafeSpeed;
 
 		Camera() {
 			MakeVector(0.0, 0.0, 5.0, pos);
-			MakeVector(0.0, 0.0, 0.0, vel);
+			MakeVector(0.0, 0.0, 0.0, view);
 			MakeVector(0.0, 0.0, 0.0, vel);
 			MakeVector(0.0, 1.0, 0.0, upv);
-			moveSpeed = .02f;
+			angleH = 0.0f;
+			angleV = 0.0f;
+			moveSpeed = .1f;
 			strafeSpeed = .10f;
-			//MakeVector(sin(angleH), sin(angleV), -cos(angleH), cameraAng);
 		}
 
 		void moveForward() 
 		{
 
 			float viewX = view[0] - pos[0];
-			float viewY = view[1] - pos[1];
 			float viewZ = view[2] - pos[2];
 
 			pos[0] += viewX * moveSpeed;
-			pos[1] += viewY * moveSpeed;
 			pos[2] += viewZ * moveSpeed;
 
 			view[0] += viewX * moveSpeed;
-			view[1] += viewY * moveSpeed;
 			view[2] += viewZ * moveSpeed;
 
 		}
@@ -106,15 +106,12 @@ class Camera {
 		void moveBackward() 
 		{
 			float viewX = view[0] - pos[0];
-			float viewY = view[1] - pos[1];
 			float viewZ = view[2] - pos[2];
 
 			pos[0] -= viewX * moveSpeed;
-			pos[1] -= viewY * moveSpeed;
 			pos[2] -= viewZ * moveSpeed;
 
 			view[0] -= viewX * moveSpeed;
-			view[1] -= viewY * moveSpeed;
 			view[2] -= viewZ * moveSpeed;
 
 		}
@@ -137,11 +134,9 @@ class Camera {
 			z /= magnitude;
 
 			pos[0] -= x*strafeSpeed;
-			pos[1] -= y*strafeSpeed;
 			pos[2] -= z*strafeSpeed;
 
 			view[0] -= x*strafeSpeed;
-			view[1] -= y*strafeSpeed;
 			view[2] -= z*strafeSpeed;
 		}
 
@@ -162,12 +157,42 @@ class Camera {
 			z /= magnitude;
 
 			pos[0] += x*strafeSpeed;
-			pos[1] += y*strafeSpeed;
 			pos[2] += z*strafeSpeed;
 
 			view[0] += x*strafeSpeed;
-			view[1] += y*strafeSpeed;
 			view[2] += z*strafeSpeed;
+		}
+
+		void lookUp() 
+		{
+			angleV -= 0.02f;
+			if (angleV < -1.0)
+				angleV = -1.0;
+
+			view[1] = sin(angleV);
+		}
+
+		void lookDown() 
+		{
+			angleV += 0.02f;
+			if (angleV > 1.0)
+				angleV = 1.0;
+
+			view[1] = sin(angleV);
+		}
+
+		void lookLeft() 
+		{
+			angleH += 0.02f;
+			view[0] = pos[0] + sin(angleH);
+			view[2] = pos[2] + -cos(angleH);
+		}
+
+		void lookRight() 
+		{
+			angleH -= 0.02f;
+			view[0] = pos[0] + sin(angleH);
+			view[2] = pos[2] + -cos(angleH);
 		}
 
 
@@ -486,7 +511,7 @@ int main()
 		physics();
 		render();
 		x11.swapBuffers();
-		printf("AngX: %f\n", toDegrees(g.cameraAng[0]));
+		//printf("AngX: %f\n", toDegrees(g.cameraAng[0]));
 	}
 	cleanup_fonts();
 	imageClean();
@@ -495,9 +520,13 @@ int main()
 
 void init_enemies()
 {
-	MakeVector(0.0, 0.0, 0.5, g.brutes[0].pos);
-	MakeVector(1.0, 0.0, 0.5, g.brutes[1].pos);
-	MakeVector(-1.0, 0.0, 0.5, g.brutes[2].pos);
+	//MakeVector(0.0, 0.0, 0.5, g.brutes[0].pos);
+	//MakeVector(1.0, 0.0, 0.5, g.brutes[1].pos);
+	//MakeVector(-1.0, 0.0, 0.5, g.brutes[2].pos);
+	MakeVector(12.5, 0.0, -2.5, g.brutes[0].pos);
+	MakeVector(12.5, 0.0, -27.5, g.brutes[1].pos);
+	MakeVector(-12.5, 0.0, -27.5, g.brutes[2].pos);
+
 	MakeVector(0.0, 0.0, 0.0, g.brutes[0].vel);
 	MakeVector(0.0, 0.0, 0.0, g.brutes[1].vel);
 	MakeVector(0.0, 0.0, 0.0, g.brutes[2].vel);
@@ -506,7 +535,13 @@ void init_enemies()
 
 	MakeVector(0.0, 1.2, 0.5, g.fliers[0].pos);
 	MakeVector(1.0, 1.2, 0.5, g.fliers[1].pos);
-	MakeVector(-1.0, 1.2, 0.5, g.fliers[2].pos);
+	MakeVector(-12.5, 1.2, -2.5, g.fliers[2].pos);
+
+	MakeVector(0.0, 0.0, 0.0, g.fliers[0].vel);
+	MakeVector(0.0, 0.0, 0.0, g.fliers[1].vel);
+	MakeVector(0.0, 0.0, 0.0, g.fliers[2].vel);
+
+
 	g.nfliers = 3;
 
 }
@@ -621,33 +656,37 @@ void check_mouse(XEvent *e)
 		//if (++ct < 10)
 		//	return;
 		if (xdiff < 0) {
-			g.angleH += 0.02f;
-			g.cameraAng[0] = sin(g.angleH);
-			g.cameraAng[2] = -cos(g.angleH);
+		    cam.lookLeft();
+//			g.angleH += 0.02f;
+//			g.cameraAng[0] = sin(g.angleH);
+//			g.cameraAng[2] = -cos(g.angleH);
 
 		}
 		else if (xdiff > 0) {
-			g.angleH -= 0.02f;
-			g.cameraAng[0] = sin(g.angleH);
-			g.cameraAng[2] = -cos(g.angleH);
+		    cam.lookRight();
+//			g.angleH -= 0.02f;
+//			g.cameraAng[0] = sin(g.angleH);
+//			g.cameraAng[2] = -cos(g.angleH);
 
 		}
 		if (ydiff < 0) {
-			g.angleV -= 0.02f;
-			if (g.angleV < -1.0)
-				g.angleV = -1.0;
-
-			g.cameraAng[1] = sin(g.angleV);
+		    cam.lookUp();
+//			g.angleV -= 0.02f;
+//			if (g.angleV < -1.0)
+//				g.angleV = -1.0;
+//
+//			g.cameraAng[1] = sin(g.angleV);
 
 		}
 		if (ydiff > 0) {
-			g.angleV += 0.02f;
-			if (g.angleV > 1.0)
-				g.angleV = 1.0;
-			g.cameraAng[1] = sin(g.angleV);
+		    cam.lookDown();
+//			g.angleV += 0.02f;
+//			if (g.angleV > 1.0)
+//				g.angleV = 1.0;
+//			g.cameraAng[1] = sin(g.angleV);
 
 		}
-		//x11.set_mouse_position(g.xres/2,g.yres/2);
+		x11.set_mouse_position(g.xres/2,g.yres/2);
 		savex = e->xbutton.x;
 		savey = e->xbutton.y;
 		//skip = !skip;
@@ -1222,58 +1261,58 @@ void check_mouse(XEvent *e)
 
 		// Player movement
 		if (g.key_states & g.w_mask) {
-			//cam.moveForward();
+			cam.moveForward();
 
-
-								g.cameraVel[0] += 0.02f;
-								if (g.cameraVel[0] > 0.08f)
-									g.cameraVel[0] = 0.08f;
-								g.cameraVel[2] += 0.02f;
-								if (g.cameraVel[2] > 0.08f)
-									g.cameraVel[2] = 0.08f;
-								g.cameraPos[0] += g.cameraAng[0] * g.cameraVel[0];
-								g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
+//
+//								g.cameraVel[0] += 0.02f;
+//								if (g.cameraVel[0] > 0.08f)
+//									g.cameraVel[0] = 0.08f;
+//								g.cameraVel[2] += 0.02f;
+//								if (g.cameraVel[2] > 0.08f)
+//									g.cameraVel[2] = 0.08f;
+//								g.cameraPos[0] += g.cameraAng[0] * g.cameraVel[0];
+//								g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
 		}
 		if (g.key_states & g.a_mask) {
-			//cam.moveLeft();
+			cam.moveLeft();
 
 
 
-
-								if (!(g.key_states & g.w_mask))
-									g.cameraVel[0] += 0.02f;
-								//if (!(g.key_states & g.s_mask))
-								//    g.cameraVel[0] -= 0.02f;
-								if (g.cameraVel[0] > 0.08f)
-									g.cameraVel[0] = 0.08f;
-			
-								//g.cameraVel[2] += 0.02f;
-								//if (g.cameraVel[2] > 0.08f)
-								//    g.cameraVel[2] = 0.08f;
-			
-								g.cameraPos[0] += (g.cameraAng[0]-1.0) * g.cameraVel[0];
-								g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
-			
-
+//
+//								if (!(g.key_states & g.w_mask))
+//									g.cameraVel[0] += 0.02f;
+//								//if (!(g.key_states & g.s_mask))
+//								//    g.cameraVel[0] -= 0.02f;
+//								if (g.cameraVel[0] > 0.08f)
+//									g.cameraVel[0] = 0.08f;
+//			
+//								//g.cameraVel[2] += 0.02f;
+//								//if (g.cameraVel[2] > 0.08f)
+//								//    g.cameraVel[2] = 0.08f;
+//			
+//								g.cameraPos[0] += (g.cameraAng[0]-1.0) * g.cameraVel[0];
+//								g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
+//			
+//
 		}
 		if (g.key_states & g.s_mask) {
-			//cam.moveBackward();
+			cam.moveBackward();
 
 
 
 
-			g.cameraVel[0] -= 0.02f;
-			if (g.cameraVel[0] < -0.08f)
-				g.cameraVel[0] = -0.08f;
-			g.cameraVel[2] -= 0.02f;
-			if (g.cameraVel[2] < -0.08f)
-				g.cameraVel[2] = -0.08f;
-			g.cameraPos[0] += g.cameraAng[0] * g.cameraVel[0];
-			g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
+			//g.cameraVel[0] -= 0.02f;
+			//if (g.cameraVel[0] < -0.08f)
+			//	g.cameraVel[0] = -0.08f;
+			//g.cameraVel[2] -= 0.02f;
+			//if (g.cameraVel[2] < -0.08f)
+			//	g.cameraVel[2] = -0.08f;
+			//g.cameraPos[0] += g.cameraAng[0] * g.cameraVel[0];
+			//g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
 
 		}
 		if (g.key_states & g.d_mask) {
-			//cam.moveRight();
+			cam.moveRight();
 
 
 
@@ -1282,19 +1321,19 @@ void check_mouse(XEvent *e)
 
 
 
-			if (!(g.key_states & g.w_mask))
-				g.cameraVel[0] -= 0.02f;
-			//if (!(g.key_states & g.s_mask))
-			//    g.cameraVel[0] -= 0.02f;
-			if (g.cameraVel[0] < -0.08f)
-				g.cameraVel[0] = -0.08f;
-
-			//g.cameraVel[2] -= 0.02f;
-			//if (g.cameraVel[2] < -0.08f)
-			//    g.cameraVel[2] = -0.08f;
-
-			g.cameraPos[0] += (g.cameraAng[0]-1.0) * g.cameraVel[0];
-			g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
+//			if (!(g.key_states & g.w_mask))
+//				g.cameraVel[0] -= 0.02f;
+//			//if (!(g.key_states & g.s_mask))
+//			//    g.cameraVel[0] -= 0.02f;
+//			if (g.cameraVel[0] < -0.08f)
+//				g.cameraVel[0] = -0.08f;
+//
+//			//g.cameraVel[2] -= 0.02f;
+//			//if (g.cameraVel[2] < -0.08f)
+//			//    g.cameraVel[2] = -0.08f;
+//
+//			g.cameraPos[0] += (g.cameraAng[0]-1.0) * g.cameraVel[0];
+//			g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
 		}
 
 		// Left/Right wall collision
@@ -1569,15 +1608,16 @@ void check_mouse(XEvent *e)
 
 
 		// Camera that can move on x&z and look on x,y,&z
-						gluLookAt(g.cameraPos[0], 0.0f, g.cameraPos[2],
-								g.cameraPos[0]+(g.cameraAng[0]), g.cameraPos[1]+g.cameraAng[1], g.cameraPos[2]+g.cameraAng[2],
-								0.0f, 1.0f, 0.0f);
+//						gluLookAt(g.cameraPos[0], 0.0f, g.cameraPos[2],
+//						          g.cameraPos[0]+(g.cameraAng[0]), g.cameraPos[1]+g.cameraAng[1], g.cameraPos[2]+g.cameraAng[2],
+//						          0.0f, 1.0f, 0.0f);
+//
+//
 
-
-
+		gluLookAt(cam.pos[0] , 0.0f , cam.pos[2],
 		//gluLookAt(cam.pos[0] , cam.pos[1] , cam.pos[2],
-		//		cam.view[0], cam.view[1], cam.view[2],
-		//		cam.upv[0],  cam.upv[1], cam.upv[2]);
+				cam.view[0], cam.view[1], cam.view[2],
+				cam.upv[0],  cam.upv[1], cam.upv[2]);
 
 		glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
 		//
@@ -1603,9 +1643,13 @@ void check_mouse(XEvent *e)
 		r.center = 0;
 		ggprint8b(&r, 16, 0x00887766, "4490 OpenGL");
 		ggprint8b(&r, 16, 0x00887766, "Camera Info:");
-		ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.cameraPos[0], g.cameraPos[1], g.cameraPos[2]);
-		ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.cameraAng[0], g.cameraAng[1], g.cameraAng[2]);
-		ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.cameraVel[0], g.cameraVel[2]);
+//		ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.cameraPos[0], g.cameraPos[1], g.cameraPos[2]);
+//		ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.cameraAng[0], g.cameraAng[1], g.cameraAng[2]);
+//		ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.cameraVel[0], g.cameraVel[2]);
+		ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", cam.pos[0], cam.pos[1], cam.pos[2]);
+		ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", cam.view[0], cam.view[1], cam.view[2]);
+		ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", cam.vel[0], cam.vel[2]);
+
 		ggprint8b(&r, 16, 0x00887766, "Controls:");
 		ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
 		ggprint8b(&r, 16, 0x00887766, "    w/s: Move Forward/Backward");
