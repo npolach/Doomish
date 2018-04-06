@@ -67,6 +67,112 @@ GLuint floor1Texture;
 Ppmimage * wall1Image=NULL;
 GLuint wall1Texture;
 
+class Camera {
+	public:
+		Vec pos;
+		Vec vel;
+		Vec view;
+		Vec upv;
+		Flt moveSpeed;
+		Flt strafeSpeed;
+
+		Camera() {
+			MakeVector(0.0, 0.0, 5.0, pos);
+			MakeVector(0.0, 0.0, 0.0, vel);
+			MakeVector(0.0, 0.0, 0.0, vel);
+			MakeVector(0.0, 1.0, 0.0, upv);
+			moveSpeed = .02f;
+			strafeSpeed = .10f;
+			//MakeVector(sin(angleH), sin(angleV), -cos(angleH), cameraAng);
+		}
+
+		void moveForward() 
+		{
+
+			float viewX = view[0] - pos[0];
+			float viewY = view[1] - pos[1];
+			float viewZ = view[2] - pos[2];
+
+			pos[0] += viewX * moveSpeed;
+			pos[1] += viewY * moveSpeed;
+			pos[2] += viewZ * moveSpeed;
+
+			view[0] += viewX * moveSpeed;
+			view[1] += viewY * moveSpeed;
+			view[2] += viewZ * moveSpeed;
+
+		}
+
+		void moveBackward() 
+		{
+			float viewX = view[0] - pos[0];
+			float viewY = view[1] - pos[1];
+			float viewZ = view[2] - pos[2];
+
+			pos[0] -= viewX * moveSpeed;
+			pos[1] -= viewY * moveSpeed;
+			pos[2] -= viewZ * moveSpeed;
+
+			view[0] -= viewX * moveSpeed;
+			view[1] -= viewY * moveSpeed;
+			view[2] -= viewZ * moveSpeed;
+
+		}
+
+		void moveLeft() 
+		{
+
+			float viewX = view[0] - pos[0];
+			float viewY = view[1] - pos[1];
+			float viewZ = view[2] - pos[2];
+
+			float x = ((viewY * upv[2]) - (viewZ * upv[1]));
+			float y = ((viewZ * upv[0]) - (viewX * upv[2]));
+			float z = ((viewX * upv[1]) - (viewY * upv[0]));
+
+			float magnitude = sqrt( (x * x) + (y * y) + (z * z) );
+
+			x /= magnitude;
+			y /= magnitude;
+			z /= magnitude;
+
+			pos[0] -= x*strafeSpeed;
+			pos[1] -= y*strafeSpeed;
+			pos[2] -= z*strafeSpeed;
+
+			view[0] -= x*strafeSpeed;
+			view[1] -= y*strafeSpeed;
+			view[2] -= z*strafeSpeed;
+		}
+
+		void moveRight() 
+		{
+			float viewX = view[0] - pos[0];
+			float viewY = view[1] - pos[1];
+			float viewZ = view[2] - pos[2];
+
+			float x = ((viewY * upv[2]) - (viewZ * upv[1]));
+			float y = ((viewZ * upv[0]) - (viewX * upv[2]));
+			float z = ((viewX * upv[1]) - (viewY * upv[0]));
+
+			float magnitude = sqrt( (x * x) + (y * y) + (z * z) );
+
+			x /= magnitude;
+			y /= magnitude;
+			z /= magnitude;
+
+			pos[0] += x*strafeSpeed;
+			pos[1] += y*strafeSpeed;
+			pos[2] += z*strafeSpeed;
+
+			view[0] += x*strafeSpeed;
+			view[1] += y*strafeSpeed;
+			view[2] += z*strafeSpeed;
+		}
+
+
+} cam;
+
 class Brute {
 	public:
 		Vec pos;
@@ -380,6 +486,7 @@ int main()
 		physics();
 		render();
 		x11.swapBuffers();
+		printf("AngX: %f\n", toDegrees(g.cameraAng[0]));
 	}
 	cleanup_fonts();
 	imageClean();
@@ -1115,33 +1222,46 @@ void check_mouse(XEvent *e)
 
 		// Player movement
 		if (g.key_states & g.w_mask) {
-			g.cameraVel[0] += 0.02f;
-			if (g.cameraVel[0] > 0.08f)
-				g.cameraVel[0] = 0.08f;
-			g.cameraVel[2] += 0.02f;
-			if (g.cameraVel[2] > 0.08f)
-				g.cameraVel[2] = 0.08f;
-			g.cameraPos[0] += g.cameraAng[0] * g.cameraVel[0];
-			g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
+			//cam.moveForward();
+
+
+								g.cameraVel[0] += 0.02f;
+								if (g.cameraVel[0] > 0.08f)
+									g.cameraVel[0] = 0.08f;
+								g.cameraVel[2] += 0.02f;
+								if (g.cameraVel[2] > 0.08f)
+									g.cameraVel[2] = 0.08f;
+								g.cameraPos[0] += g.cameraAng[0] * g.cameraVel[0];
+								g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
 		}
 		if (g.key_states & g.a_mask) {
-			if (!(g.key_states & g.w_mask))
-				g.cameraVel[0] += 0.02f;
-			//if (!(g.key_states & g.s_mask))
-			//    g.cameraVel[0] -= 0.02f;
-			if (g.cameraVel[0] > 0.08f)
-				g.cameraVel[0] = 0.08f;
+			//cam.moveLeft();
 
-			//g.cameraVel[2] += 0.02f;
-			//if (g.cameraVel[2] > 0.08f)
-			//    g.cameraVel[2] = 0.08f;
 
-			g.cameraPos[0] += (g.cameraAng[0]-1.0) * g.cameraVel[0];
-			g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
 
+
+								if (!(g.key_states & g.w_mask))
+									g.cameraVel[0] += 0.02f;
+								//if (!(g.key_states & g.s_mask))
+								//    g.cameraVel[0] -= 0.02f;
+								if (g.cameraVel[0] > 0.08f)
+									g.cameraVel[0] = 0.08f;
+			
+								//g.cameraVel[2] += 0.02f;
+								//if (g.cameraVel[2] > 0.08f)
+								//    g.cameraVel[2] = 0.08f;
+			
+								g.cameraPos[0] += (g.cameraAng[0]-1.0) * g.cameraVel[0];
+								g.cameraPos[2] += g.cameraAng[2] * g.cameraVel[2];
+			
 
 		}
 		if (g.key_states & g.s_mask) {
+			//cam.moveBackward();
+
+
+
+
 			g.cameraVel[0] -= 0.02f;
 			if (g.cameraVel[0] < -0.08f)
 				g.cameraVel[0] = -0.08f;
@@ -1153,6 +1273,15 @@ void check_mouse(XEvent *e)
 
 		}
 		if (g.key_states & g.d_mask) {
+			//cam.moveRight();
+
+
+
+
+
+
+
+
 			if (!(g.key_states & g.w_mask))
 				g.cameraVel[0] -= 0.02f;
 			//if (!(g.key_states & g.s_mask))
@@ -1436,10 +1565,19 @@ void check_mouse(XEvent *e)
 		gluPerspective(45.0f, g.aspectRatio, 0.1f, 100.0f);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
+
+
+
 		// Camera that can move on x&z and look on x,y,&z
-		gluLookAt(g.cameraPos[0], 0.0f, g.cameraPos[2],
-				g.cameraPos[0]+(g.cameraAng[0]), g.cameraPos[1]+g.cameraAng[1], g.cameraPos[2]+g.cameraAng[2],
-				0.0f, 1.0f, 0.0f);
+						gluLookAt(g.cameraPos[0], 0.0f, g.cameraPos[2],
+								g.cameraPos[0]+(g.cameraAng[0]), g.cameraPos[1]+g.cameraAng[1], g.cameraPos[2]+g.cameraAng[2],
+								0.0f, 1.0f, 0.0f);
+
+
+
+		//gluLookAt(cam.pos[0] , cam.pos[1] , cam.pos[2],
+		//		cam.view[0], cam.view[1], cam.view[2],
+		//		cam.upv[0],  cam.upv[1], cam.upv[2]);
 
 		glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
 		//
