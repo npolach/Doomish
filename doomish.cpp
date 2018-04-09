@@ -205,7 +205,7 @@ class Camera {
 
 		void lookUp() 
 		{
-			angleV -= 0.02f;
+			angleV -= 0.0225f;
 			if (angleV < -1.0)
 				angleV = -1.0;
 
@@ -214,7 +214,7 @@ class Camera {
 
 		void lookDown() 
 		{
-			angleV += 0.02f;
+			angleV += 0.0225f;
 			if (angleV > 1.0)
 				angleV = 1.0;
 
@@ -223,14 +223,14 @@ class Camera {
 
 		void lookLeft() 
 		{
-			angleH += 0.02f;
+			angleH += 0.0225f;
 			view[0] = pos[0] + sin(angleH);
 			view[2] = pos[2] + -cos(angleH);
 		}
 
 		void lookRight() 
 		{
-			angleH -= 0.02f;
+			angleH -= 0.0225f;
 			view[0] = pos[0] + sin(angleH);
 			view[2] = pos[2] + -cos(angleH);
 		}
@@ -686,36 +686,21 @@ void check_mouse(XEvent *e)
 		//	return;
 		if (xdiff < 0) {
 			g.cam.lookLeft();
-			//			g.angleH += 0.02f;
-			//			g.cameraAng[0] = sin(g.angleH);
-			//			g.cameraAng[2] = -cos(g.angleH);
 
 		}
 		else if (xdiff > 0) {
 			g.cam.lookRight();
-			//			g.angleH -= 0.02f;
-			//			g.cameraAng[0] = sin(g.angleH);
-			//			g.cameraAng[2] = -cos(g.angleH);
 
 		}
 		if (ydiff < 0) {
 			g.cam.lookUp();
-			//			g.angleV -= 0.02f;
-			//			if (g.angleV < -1.0)
-			//				g.angleV = -1.0;
-			//
-			//			g.cameraAng[1] = sin(g.angleV);
 
 		}
 		if (ydiff > 0) {
 			g.cam.lookDown();
-			//			g.angleV += 0.02f;
-			//			if (g.angleV > 1.0)
-			//				g.angleV = 1.0;
-			//			g.cameraAng[1] = sin(g.angleV);
 
 		}
-		//x11.set_mouse_position(g.xres/2,g.yres/2);
+		x11.set_mouse_position(g.xres/2,g.yres/2);
 		savex = e->xbutton.x;
 		savey = e->xbutton.y;
 		//skip = !skip;
@@ -1028,7 +1013,8 @@ void check_mouse(XEvent *e)
 			glEnable(GL_ALPHA_TEST);
 			glAlphaFunc(GL_GREATER, 0.0f); //Alpha
 
-			glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1]-.5, g.brutes[i].pos[2]);
+			glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1]-.25, g.brutes[i].pos[2]);
+			//glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1]-.5, g.brutes[i].pos[2]);
 			///// Billboarding
 			//Setup camera rotation matrix
 			//
