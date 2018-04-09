@@ -462,6 +462,10 @@ class X11_wrapper {
 
 } x11;
 
+//Spritesheet dimensions
+// Brute: 41x57 : 2 sprites
+// Fliers: 45x47 : 4 sprites
+// Portal: 64x64 : 5 sprites
 void imageConvert()
 {
 	//    //clean up all images in master folder
@@ -471,6 +475,12 @@ void imageConvert()
 	remove("./images/flier.ppm");
 	remove("./images/portal.ppm");
 
+	// Spritesheets
+	remove("./images/brutesheet.ppm");
+	remove("./images/fliersheet.ppm");
+	remove("./images/portalsheet.ppm");
+
+
 	//
 	//    //convert images to ppm
 	system("mogrify -format ppm ./images/floor1.jpg");
@@ -478,6 +488,11 @@ void imageConvert()
 	system("mogrify -format ppm ./images/imp.jpg");
 	system("mogrify -format ppm ./images/flier.jpg");
 	system("mogrify -format ppm ./images/portal.jpg");
+
+	// Spritesheets
+	system("mogrify -format ppm ./images/brutesheet.ppm");
+	system("mogrify -format ppm ./images/fliersheet.ppm");
+	system("mogrify -format ppm ./images/portalsheet.ppm");
 }
 
 void imageClean()
@@ -489,14 +504,11 @@ void imageClean()
 	remove("./images/imp.ppm");
 	remove("./images/flier.ppm");
 	remove("./images/portal.ppm");
-}
 
-Flt toDegrees(Flt radians) {
-	return radians * (180.0 / M_PI);
-}
-
-Flt toRadians(Flt degrees) {
-	return (degrees * M_PI ) / 180;
+	// Spritesheets
+	remove("./images/brutesheet.ppm");
+	remove("./images/fliersheet.ppm");
+	remove("./images/portalsheet.ppm");
 }
 
 void init_opengl();
