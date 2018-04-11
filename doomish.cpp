@@ -299,13 +299,15 @@ class Flier {
 	Timers timer;
 	int FRAMECOUNT;
 	int spriteFrame;
-	//timespec lastShot;
+	struct timespec lastShot;
+	Flt nextShotDelay;
 	double delay;
 	Flier() {
 	    spriteFrame = 0;
 	    delay = 0.125;
 	    FRAMECOUNT = 4;
-	    //timer.recordTime(&lastShot);
+	    nextShotDelay = rnd() * 1;
+	    timer.recordTime(&lastShot);
 	}
 };
 
@@ -1403,8 +1405,7 @@ void drawPortals()
 
 void shootFireball(Flt x, Flt y, Flt z) {
 
-    Flt speed = .05;
-    //Flt speed = .125;
+    Flt speed = .125;
 
     // Camera center - brute center
     Vec v;
@@ -1424,7 +1425,6 @@ void shootFireball(Flt x, Flt y, Flt z) {
 
 void physics()
 {
-
     // Player movement
     if (g.key_states & g.w_mask) {
 	if (g.cam.pos[2] > -37.4f) {
@@ -1504,12 +1504,13 @@ void physics()
 
 	// Sprite Animation
 	g.fliers[i].timer.recordTime(&g.fliers[i].timer.timeCurrent);
-	//double timeSpan = g.fliers[i].timer.timeDiff(&g.fliers[i].lastShot, &g.fliers[i].timer.timeCurrent);
-	//if (timeSpan > 1) {
-	//    shootFireball(g.fliers[i].pos[0], g.fliers[i].pos[1], g.fliers[i].pos[2]);
-	//    g.fliers[i].timer.recordTime(&g.fliers[i].lastShot);
-	//}
-	double timeSpan = g.fliers[i].timer.timeDiff(&g.fliers[i].timer.animTime, &g.fliers[i].timer.timeCurrent);
+	double timeSpan = g.fliers[i].timer.timeDiff(&g.fliers[i].lastShot, &g.fliers[i].timer.timeCurrent);
+	if (timeSpan > 2.5 + g.fliers[i].nextShotDelay) {
+	    shootFireball(g.fliers[i].pos[0], g.fliers[i].pos[1], g.fliers[i].pos[2]);
+	    g.fliers[i].timer.recordTime(&g.fliers[i].lastShot);
+	    g.fliers[i].nextShotDelay = rnd() * 5;
+	}
+	timeSpan = g.fliers[i].timer.timeDiff(&g.fliers[i].timer.animTime, &g.fliers[i].timer.timeCurrent);
 	if (timeSpan > g.fliers[i].delay) {
 	    ++g.fliers[i].spriteFrame;
 	    if(g.fliers[i].spriteFrame >= g.fliers[i].FRAMECOUNT)
@@ -1597,8 +1598,6 @@ void physics()
 
 
 	if (g.nfireballs > 0) {
-
-	    shootFireball(g.fliers[i].pos[0], g.fliers[i].pos[1], g.fliers[i].pos[2]);
 
 	    // Sprite Animation
 	    g.fireballs[i].timer.recordTime(&g.fireballs[i].timer.timeCurrent);
