@@ -299,12 +299,13 @@ class Flier {
 	Timers timer;
 	int FRAMECOUNT;
 	int spriteFrame;
+	//timespec lastShot;
 	double delay;
 	Flier() {
 	    spriteFrame = 0;
 	    delay = 0.125;
 	    FRAMECOUNT = 4;
-
+	    //timer.recordTime(&lastShot);
 	}
 };
 
@@ -1503,6 +1504,11 @@ void physics()
 
 	// Sprite Animation
 	g.fliers[i].timer.recordTime(&g.fliers[i].timer.timeCurrent);
+	//double timeSpan = g.fliers[i].timer.timeDiff(&g.fliers[i].lastShot, &g.fliers[i].timer.timeCurrent);
+	//if (timeSpan > 1) {
+	//    shootFireball(g.fliers[i].pos[0], g.fliers[i].pos[1], g.fliers[i].pos[2]);
+	//    g.fliers[i].timer.recordTime(&g.fliers[i].lastShot);
+	//}
 	double timeSpan = g.fliers[i].timer.timeDiff(&g.fliers[i].timer.animTime, &g.fliers[i].timer.timeCurrent);
 	if (timeSpan > g.fliers[i].delay) {
 	    ++g.fliers[i].spriteFrame;
@@ -1591,6 +1597,9 @@ void physics()
 
 
 	if (g.nfireballs > 0) {
+
+	    shootFireball(g.fliers[i].pos[0], g.fliers[i].pos[1], g.fliers[i].pos[2]);
+
 	    // Sprite Animation
 	    g.fireballs[i].timer.recordTime(&g.fireballs[i].timer.timeCurrent);
 	    double timeSpan = g.fireballs[i].timer.timeDiff(&g.fireballs[i].timer.animTime, &g.fireballs[i].timer.timeCurrent);
