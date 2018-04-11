@@ -313,7 +313,6 @@ class Fireball {
 	Vec pos;
 	Vec dir; // direction
 	Timers timer;
-	double lifetime; // time the fireball will last
 	int FRAMECOUNT;
 	int spriteFrame;
 	double delay;
@@ -321,8 +320,6 @@ class Fireball {
 	    spriteFrame = 0;
 	    delay = 0.125;
 	    FRAMECOUNT = 5;
-	    // Remove from array (decrement g.nfireballs) after lifetime
-	    lifetime = time(NULL) + 10;
 	}
 
 };
@@ -790,775 +787,810 @@ void check_mouse(XEvent *e)
 	savey = g.yres/2;
 	x11.set_mouse_position(g.xres/2,g.yres/2);
     }
-    }
+}
 
-    int check_keys(XEvent *e)
-    {
-	//static int shift = false;
-	//Was there input from the keyboard?
-	if (e->type != KeyPress && e->type != KeyRelease)
-	    return 0;
-
-	int key = XLookupKeysym(&e->xkey, 0);
-	if (e->type == KeyRelease) {
-	    switch(key) {
-		// Camera angle
-		case XK_w:
-		    g.key_states = g.key_states&~(g.w_mask);
-		    break;
-		case XK_a:
-		    g.key_states = g.key_states&~(g.a_mask);
-		    break;
-		case XK_s:
-		    g.key_states = g.key_states&~(g.s_mask);
-		    break;
-		case XK_d:
-		    g.key_states = g.key_states&~(g.d_mask);
-		    break;
-	    }
-	}
-
-	if (e->type == KeyPress) {
-	    if (key == XK_Shift_L || key == XK_Shift_R) {
-		//shift = true;
-		return 0;
-	    }
-	    //Was there input from the keyboard?
-	    switch(key) {
-		// Camera angle
-		case XK_1:
-		    break;
-		case XK_w:
-		    g.key_states = g.key_states|g.w_mask;
-		    break;
-		case XK_a:
-		    g.key_states = g.key_states|g.a_mask;
-		    break;
-		case XK_s:
-		    g.key_states = g.key_states|g.s_mask;
-		    break;
-		case XK_d:
-		    g.key_states = g.key_states|g.d_mask;
-		    break;
-
-		case XK_Escape:
-		    return 1;
-	    }
-	}
+int check_keys(XEvent *e)
+{
+    //static int shift = false;
+    //Was there input from the keyboard?
+    if (e->type != KeyPress && e->type != KeyRelease)
 	return 0;
+
+    int key = XLookupKeysym(&e->xkey, 0);
+    if (e->type == KeyRelease) {
+	switch(key) {
+	    // Camera angle
+	    case XK_w:
+		g.key_states = g.key_states&~(g.w_mask);
+		break;
+	    case XK_a:
+		g.key_states = g.key_states&~(g.a_mask);
+		break;
+	    case XK_s:
+		g.key_states = g.key_states&~(g.s_mask);
+		break;
+	    case XK_d:
+		g.key_states = g.key_states&~(g.d_mask);
+		break;
+	}
     }
 
-    //    void vecNormalize(Vec v)
-    //    {
-    //	Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-    //	if (len == 0.0)
-    //	    return;
-    //	len = 1.0 / sqrt(len);
-    //	v[0] *= len;
-    //	v[1] *= len;
-    //	v[2] *= len;
-    //    }
+    if (e->type == KeyPress) {
+	if (key == XK_Shift_L || key == XK_Shift_R) {
+	    //shift = true;
+	    return 0;
+	}
+	//Was there input from the keyboard?
+	switch(key) {
+	    // Camera angle
+	    case XK_1:
+		break;
+	    case XK_w:
+		g.key_states = g.key_states|g.w_mask;
+		break;
+	    case XK_a:
+		g.key_states = g.key_states|g.a_mask;
+		break;
+	    case XK_s:
+		g.key_states = g.key_states|g.s_mask;
+		break;
+	    case XK_d:
+		g.key_states = g.key_states|g.d_mask;
+		break;
+
+	    case XK_Escape:
+		return 1;
+	}
+    }
+    return 0;
+}
+
+//    void vecNormalize(Vec v)
+//    {
+//	Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+//	if (len == 0.0)
+//	    return;
+//	len = 1.0 / sqrt(len);
+//	v[0] *= len;
+//	v[1] *= len;
+//	v[2] *= len;
+//    }
+//
+//    void vecScale(Vec v, Flt s)
+//    {
+//	v[0] *= s;
+//	v[1] *= s;
+//	v[2] *= s;
+//    }
+
+
+void drawFloor()
+{
+    Flt w = 2.5;
+    Flt d = 2.5;
+    Flt h = -1.0;
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    //glTranslated(0, 0, 0);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, floor1Texture);
+    glBegin(GL_QUADS);
+
+    // Bottom floor
+    for (int i = 0; i < 45; i+=5) {
+	for (int j = 0; j <45; j+=5) {
+	    glTexCoord2f(1.0f, 0.0f);
+	    glVertex3f( w-20+j, h,-d+5-i);
+
+	    glTexCoord2f(0.0f, 0.0f);
+	    glVertex3f(-w-20+j, h,-d+5-i);
+
+	    glTexCoord2f(0.0f, 1.0f);
+	    glVertex3f(-w-20+j, h, d+5-i);
+
+	    glTexCoord2f(1.0f, 1.0f);
+	    glVertex3f( w-20+j, h, d+5-i);
+	}
+    }
+
+    glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Top floor (ceiling)
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    glTranslated(0, 10, 0);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, wall1Texture);
+    glBegin(GL_QUADS);
+
+    for (int i = 0; i < 45; i+=5) {
+	for (int j = 0; j <45; j+=5) {
+	    glTexCoord2f(1.0f, 0.0f);
+	    glVertex3f( w-20+j, h,-d+5-i);
+
+	    glTexCoord2f(0.0f, 0.0f);
+	    glVertex3f(-w-20+j, h,-d+5-i);
+
+	    glTexCoord2f(0.0f, 1.0f);
+	    glVertex3f(-w-20+j, h, d+5-i);
+
+	    glTexCoord2f(1.0f, 1.0f);
+	    glVertex3f( w-20+j, h, d+5-i);
+	}
+    }
+
+    glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+}
+
+void drawWall()
+{
+    Flt w = 2.5;
+    Flt d = 7.5;
+    Flt h = -1.0;
+
+    //Front&Back Walls
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    glTranslated(1.5, 1.5, 5);
+    glRotatef(90, 1, 0, 0);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, wall1Texture);
+    glBegin(GL_QUADS);
+    for (int i = 0; i < 45; i+=5) {
+
+	// Back Walls
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-i+18.5, h+3.5, -d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-i+18.5, h+3.5, -d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-i+18.5, h+3.5, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-i+18.5, h+3.5, d);
+
+	// Front Walls
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-i+18.5, h-41.5, -d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-i+18.5, h-41.5, -d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-i+18.5, h-41.5, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-i+18.5, h-41.5, d);
+    }
+    glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    //Left&Right Walls
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    glTranslated(1.5, 1.5, 5);
+    glRotatef(90, 1, 0, 0);
+    glRotatef(90, 0, 0, 1);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, wall1Texture);
+    glBegin(GL_QUADS);
+
+    for (int i = 0; i < 45; i+=5) {
+	// Left Walls
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-i, h+25 ,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-i, h+25, -d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-i, h+25, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-i, h+25, d);
+
+	// Right Walls
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f( w-i, h-20 ,-d);
+
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-w-i, h-20, -d);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-w-i, h-20, d);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f( w-i, h-20, d);
+    }
+
+    glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void make_view_matrix(Vec p1, Vec p2, Matrix m)
+{
+    //Line between p1 and p2 form a LOS Line-of-sight.
+    //	//A rotation matrix is built to transform objects to this LOS.
+    //		//Diana Gruber  http://www.makegames.com/3Drotation/
+    m[0][0]=m[1][1]=m[2][2]=1.0f;
+    m[0][1]=m[0][2]=m[1][0]=m[1][2]=m[2][0]=m[2][1]=0.0f;
+    Vec out = { p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2] };
     //
-    //    void vecScale(Vec v, Flt s)
-    //    {
-    //	v[0] *= s;
-    //	v[1] *= s;
-    //	v[2] *= s;
-    //    }
-
-
-    void drawFloor()
-    {
-	Flt w = 2.5;
-	Flt d = 2.5;
-	Flt h = -1.0;
-
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	glPushMatrix();
-	//glTranslated(0, 0, 0);
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, floor1Texture);
-	glBegin(GL_QUADS);
-
-	// Bottom floor
-	for (int i = 0; i < 45; i+=5) {
-	    for (int j = 0; j <45; j+=5) {
-		glTexCoord2f(1.0f, 0.0f);
-		glVertex3f( w-20+j, h,-d+5-i);
-
-		glTexCoord2f(0.0f, 0.0f);
-		glVertex3f(-w-20+j, h,-d+5-i);
-
-		glTexCoord2f(0.0f, 1.0f);
-		glVertex3f(-w-20+j, h, d+5-i);
-
-		glTexCoord2f(1.0f, 1.0f);
-		glVertex3f( w-20+j, h, d+5-i);
-	    }
-	}
-
-	glEnd();
-	glPopMatrix();
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// Top floor (ceiling)
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	glPushMatrix();
-	glTranslated(0, 10, 0);
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, wall1Texture);
-	glBegin(GL_QUADS);
-
-	for (int i = 0; i < 45; i+=5) {
-	    for (int j = 0; j <45; j+=5) {
-		glTexCoord2f(1.0f, 0.0f);
-		glVertex3f( w-20+j, h,-d+5-i);
-
-		glTexCoord2f(0.0f, 0.0f);
-		glVertex3f(-w-20+j, h,-d+5-i);
-
-		glTexCoord2f(0.0f, 1.0f);
-		glVertex3f(-w-20+j, h, d+5-i);
-
-		glTexCoord2f(1.0f, 1.0f);
-		glVertex3f( w-20+j, h, d+5-i);
-	    }
-	}
-
-	glEnd();
-	glPopMatrix();
-	glBindTexture(GL_TEXTURE_2D, 0);
-
+    Flt l1, len = out[0]*out[0] + out[1]*out[1] + out[2]*out[2];
+    if (len == 0.0f) {
+	MakeVector(0.0f,0.0f,1.0f,out);
+    } else {
+	l1 = 1.0f / sqrtf(len);
+	out[0] *= l1;
+	//out[1] *= l1;
+	out[2] *= l1;
     }
-
-    void drawWall()
-    {
-	Flt w = 2.5;
-	Flt d = 7.5;
-	Flt h = -1.0;
-
-	//Front&Back Walls
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	glPushMatrix();
-	glTranslated(1.5, 1.5, 5);
-	glRotatef(90, 1, 0, 0);
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, wall1Texture);
-	glBegin(GL_QUADS);
-	for (int i = 0; i < 45; i+=5) {
-
-	    // Back Walls
-	    glTexCoord2f(1.0f, 0.0f);
-	    glVertex3f( w-i+18.5, h+3.5, -d);
-
-	    glTexCoord2f(0.0f, 0.0f);
-	    glVertex3f(-w-i+18.5, h+3.5, -d);
-
-	    glTexCoord2f(0.0f, 1.0f);
-	    glVertex3f(-w-i+18.5, h+3.5, d);
-
-	    glTexCoord2f(1.0f, 1.0f);
-	    glVertex3f( w-i+18.5, h+3.5, d);
-
-	    // Front Walls
-	    glTexCoord2f(1.0f, 0.0f);
-	    glVertex3f( w-i+18.5, h-41.5, -d);
-
-	    glTexCoord2f(0.0f, 0.0f);
-	    glVertex3f(-w-i+18.5, h-41.5, -d);
-
-	    glTexCoord2f(0.0f, 1.0f);
-	    glVertex3f(-w-i+18.5, h-41.5, d);
-
-	    glTexCoord2f(1.0f, 1.0f);
-	    glVertex3f( w-i+18.5, h-41.5, d);
-	}
-	glEnd();
-	glPopMatrix();
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	//Left&Right Walls
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	glPushMatrix();
-	glTranslated(1.5, 1.5, 5);
-	glRotatef(90, 1, 0, 0);
-	glRotatef(90, 0, 0, 1);
-	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, wall1Texture);
-	glBegin(GL_QUADS);
-
-	for (int i = 0; i < 45; i+=5) {
-	    // Left Walls
-	    glTexCoord2f(1.0f, 0.0f);
-	    glVertex3f( w-i, h+25 ,-d);
-
-	    glTexCoord2f(0.0f, 0.0f);
-	    glVertex3f(-w-i, h+25, -d);
-
-	    glTexCoord2f(0.0f, 1.0f);
-	    glVertex3f(-w-i, h+25, d);
-
-	    glTexCoord2f(1.0f, 1.0f);
-	    glVertex3f( w-i, h+25, d);
-
-	    // Right Walls
-	    glTexCoord2f(1.0f, 0.0f);
-	    glVertex3f( w-i, h-20 ,-d);
-
-	    glTexCoord2f(0.0f, 0.0f);
-	    glVertex3f(-w-i, h-20, -d);
-
-	    glTexCoord2f(0.0f, 1.0f);
-	    glVertex3f(-w-i, h-20, d);
-
-	    glTexCoord2f(1.0f, 1.0f);
-	    glVertex3f( w-i, h-20, d);
-	}
-
-	glEnd();
-	glPopMatrix();
-	glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    void make_view_matrix(Vec p1, Vec p2, Matrix m)
-    {
-	//Line between p1 and p2 form a LOS Line-of-sight.
-	//	//A rotation matrix is built to transform objects to this LOS.
-	//		//Diana Gruber  http://www.makegames.com/3Drotation/
-	m[0][0]=m[1][1]=m[2][2]=1.0f;
-	m[0][1]=m[0][2]=m[1][0]=m[1][2]=m[2][0]=m[2][1]=0.0f;
-	Vec out = { p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2] };
-	//
-	Flt l1, len = out[0]*out[0] + out[1]*out[1] + out[2]*out[2];
-	if (len == 0.0f) {
-	    MakeVector(0.0f,0.0f,1.0f,out);
-	} else {
-	    l1 = 1.0f / sqrtf(len);
-	    out[0] *= l1;
-	    //out[1] *= l1;
-	    out[2] *= l1;
-	}
-	m[2][0] = out[0];
-	//m[2][1] = out[1];
-	m[2][2] = out[2];
-	Vec up = { -out[1] * out[0], upv[1] - out[1] * out[1], -out[1] * out[2] };
-	//
-	len = up[0]*up[0] + up[1]*up[1] + up[2]*up[2];
-	if (len == 0.0f) {
-	    MakeVector(0.0f,0.0f,1.0f,up);
-	}
-	else {
-	    l1 = 1.0f / sqrtf(len);
-	    up[0] *= l1;
-	    up[1] *= l1;
-	    up[2] *= l1;
-	}
-
-	//make left vector.
-	VecCross(up, out, m[0]);
-    }
-
-
-    void vecNormalize(Vec v)
-    {
-	Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-	if (len == 0.0)
-	    return;
-	len = 1.0 / sqrt(len);
-	v[0] *= len;
-	v[1] *= len;
-	v[2] *= len;
-    }
-
-    void vecScale(Vec v, Flt s)
-    {
-	v[0] *= s;
-	v[1] *= s;
-	v[2] *= s;
-    }
-
-    void drawBrutes()
-    {
-	Flt w = 0.5;
-	Flt d = 0.75;
-	Flt h = 0.0;
-
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	for (int i = 0; i < g.nbrutes; i++) {
-
-	    glPushMatrix();
-	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	    glBindTexture(GL_TEXTURE_2D, bruteSilhouette);
-	    glEnable(GL_ALPHA_TEST);
-	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
-
-	    glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1]-.25, g.brutes[i].pos[2]);
-	    //glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1]-.5, g.brutes[i].pos[2]);
-	    ///// Billboarding
-	    //Setup camera rotation matrix
-	    //
-	    Vec v;
-	    VecSub(g.brutes[i].pos, g.cam.pos, v);
-	    Vec z = {0.0f, 0.0f, 0.0f};
-	    make_view_matrix(z, v, g.cameraMatrix);
-	    //
-	    //Billboard_to_camera();
-	    //
-	    float mat[16];
-	    mat[ 0] = g.cameraMatrix[0][0];
-	    mat[ 1] = g.cameraMatrix[0][1];
-	    mat[ 2] = g.cameraMatrix[0][2];
-	    mat[ 4] = g.cameraMatrix[1][0];
-	    mat[ 5] = g.cameraMatrix[1][1];
-	    mat[ 6] = g.cameraMatrix[1][2];
-	    mat[ 8] = g.cameraMatrix[2][0];
-	    mat[ 9] = g.cameraMatrix[2][1];
-	    mat[10] = g.cameraMatrix[2][2];
-	    mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
-	    mat[15] = 1.0f;
-	    glMultMatrixf(mat);
-	    //
-	    ///// End Billboarding
-
-	    float tx = g.brutes[i].spriteFrame * .5;
-
-	    glRotatef(90, 1, 0, 0);
-	    glBegin(GL_QUADS);
-
-	    //glTexCoord2f(0.0f, 1.0f);
-	    glTexCoord2f(tx, 0.0f);
-	    glVertex3f( w, h,-d);
-
-	    //glTexCoord2f(0.0f, 0.0f);
-	    glTexCoord2f(tx+.5, 0.0f);
-	    glVertex3f(-w, h,-d);
-
-	    //glTexCoord2f(1.0f, 0.0f);
-	    glTexCoord2f(tx+.5, 1.0f);
-	    glVertex3f(-w, h, d);
-
-	    //glTexCoord2f(1.0f, 1.0f);
-	    glTexCoord2f(tx, 1.0f);
-	    glVertex3f( w, h, d);
-
-	    glEnd();
-	    glPopMatrix();
-	}
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_ALPHA_TEST);
-    }
-
-    void drawFliers()
-    {
-	Flt w = 0.35;
-	Flt d = 0.35;
-	Flt h = 0.0;
-
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	for (int i = 0; i < g.nfliers; i++) {
-
-	    glPushMatrix();
-	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	    glBindTexture(GL_TEXTURE_2D, flierSilhouette);
-	    glEnable(GL_ALPHA_TEST);
-	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
-
-	    glTranslated(g.fliers[i].pos[0], g.fliers[i].pos[1]-.5, g.fliers[i].pos[2]);
-	    ///// Billboarding
-	    //Setup camera rotation matrix
-	    //
-	    Vec v;
-	    VecSub(g.fliers[i].pos, g.cam.pos, v);
-	    Vec z = {0.0f, 0.0f, 0.0f};
-	    make_view_matrix(z, v, g.cameraMatrix);
-	    //
-	    //Billboard_to_camera();
-	    //
-	    float mat[16];
-	    mat[ 0] = g.cameraMatrix[0][0];
-	    mat[ 1] = g.cameraMatrix[0][1];
-	    mat[ 2] = g.cameraMatrix[0][2];
-	    mat[ 4] = g.cameraMatrix[1][0];
-	    mat[ 5] = g.cameraMatrix[1][1];
-	    mat[ 6] = g.cameraMatrix[1][2];
-	    mat[ 8] = g.cameraMatrix[2][0];
-	    mat[ 9] = g.cameraMatrix[2][1];
-	    mat[10] = g.cameraMatrix[2][2];
-	    mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
-	    mat[15] = 1.0f;
-	    glMultMatrixf(mat);
-	    //
-	    ///// End Billboarding
-
-	    float tx = g.fliers[i].spriteFrame * .25;
-
-	    glRotatef(90, 1, 0, 0);
-	    glBegin(GL_QUADS);
-
-	    glTexCoord2f(tx, 0.0f);
-	    glVertex3f( w, h,-d);
-
-	    glTexCoord2f(tx+.25, 0.0f);
-	    glVertex3f(-w, h,-d);
-
-	    glTexCoord2f(tx+.25, 1.0f);
-	    glVertex3f(-w, h, d);
-
-	    glTexCoord2f(tx, 1.0f);
-	    glVertex3f( w, h, d);
-
-	    glEnd();
-	    glPopMatrix();
-	}
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_ALPHA_TEST);
-    }
-
-    void drawFireballs()
-    {
-	Flt w = 0.15;
-	Flt d = 0.15;
-	Flt h = 0.0;
-
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	for (int i = 0; i < g.nfireballs; i++) {
-
-	    glPushMatrix();
-	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	    glBindTexture(GL_TEXTURE_2D, fireballSilhouette);
-	    glEnable(GL_ALPHA_TEST);
-	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
-
-	    glTranslated(g.fireballs[i].pos[0], g.fireballs[i].pos[1]-.5, g.fireballs[i].pos[2]);
-	    ///// Billboarding
-	    //Setup camera rotation matrix
-	    //
-	    Vec v;
-	    VecSub(g.fireballs[i].pos, g.cam.pos, v);
-	    Vec z = {0.0f, 0.0f, 0.0f};
-	    make_view_matrix(z, v, g.cameraMatrix);
-	    //
-	    //Billboard_to_camera();
-	    //
-	    float mat[16];
-	    mat[ 0] = g.cameraMatrix[0][0];
-	    mat[ 1] = g.cameraMatrix[0][1];
-	    mat[ 2] = g.cameraMatrix[0][2];
-	    mat[ 4] = g.cameraMatrix[1][0];
-	    mat[ 5] = g.cameraMatrix[1][1];
-	    mat[ 6] = g.cameraMatrix[1][2];
-	    mat[ 8] = g.cameraMatrix[2][0];
-	    mat[ 9] = g.cameraMatrix[2][1];
-	    mat[10] = g.cameraMatrix[2][2];
-	    mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
-	    mat[15] = 1.0f;
-	    glMultMatrixf(mat);
-	    //
-	    ///// End Billboarding
-
-	    float tx = g.fireballs[i].spriteFrame * .20;
-
-	    glRotatef(90, 1, 0, 0);
-	    glBegin(GL_QUADS);
-
-	    glTexCoord2f(tx, 0.0f);
-	    glVertex3f( w, h,-d);
-
-	    glTexCoord2f(tx+.20, 0.0f);
-	    glVertex3f(-w, h,-d);
-
-	    glTexCoord2f(tx+.20, 1.0f);
-	    glVertex3f(-w, h, d);
-
-	    glTexCoord2f(tx, 1.0f);
-	    glVertex3f( w, h, d);
-
-	    glEnd();
-	    glPopMatrix();
-	}
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_ALPHA_TEST);
-    }
-
-
-    void drawPortals()
-    {
-	Flt w = 1.5;
-	Flt d = 1.5;
-	Flt h = 0.0;
-
-	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-	for (int i = 0; i < g.nportals; i++) {
-
-	    glPushMatrix();
-	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-	    glBindTexture(GL_TEXTURE_2D, portalSilhouette);
-	    glEnable(GL_ALPHA_TEST);
-	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
-
-	    glTranslated(g.portals[i].pos[0], g.portals[i].pos[1]+.4, g.portals[i].pos[2]);
-	    ///// Billboarding
-	    //Setup camera rotation matrix
-	    //
-	    Vec v;
-	    VecSub(g.portals[i].pos, g.cam.pos, v);
-	    Vec z = {0.0f, 0.0f, 0.0f};
-	    make_view_matrix(z, v, g.cameraMatrix);
-	    //
-	    //Billboard_to_camera();
-	    //
-	    float mat[16];
-	    mat[ 0] = g.cameraMatrix[0][0];
-	    mat[ 1] = g.cameraMatrix[0][1];
-	    mat[ 2] = g.cameraMatrix[0][2];
-	    mat[ 4] = g.cameraMatrix[1][0];
-	    mat[ 5] = g.cameraMatrix[1][1];
-	    mat[ 6] = g.cameraMatrix[1][2];
-	    mat[ 8] = g.cameraMatrix[2][0];
-	    mat[ 9] = g.cameraMatrix[2][1];
-	    mat[10] = g.cameraMatrix[2][2];
-	    mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
-	    mat[15] = 1.0f;
-	    glMultMatrixf(mat);
-	    //
-	    ///// End Billboarding
-
-	    float tx = g.portals[i].spriteFrame * .20;
-
-	    glRotatef(90, 1, 0, 0);
-	    glBegin(GL_QUADS);
-
-	    //glTexCoord2f(0.0f, 1.0f);
-	    glTexCoord2f(tx, 0.0f);
-	    glVertex3f( w, h,-d);
-
-	    //glTexCoord2f(0.0f, 0.0f);
-	    glTexCoord2f(tx+.20, 0.0f);
-	    glVertex3f(-w, h,-d);
-
-	    //glTexCoord2f(1.0f, 0.0f);
-	    glTexCoord2f(tx+.20, 1.0f);
-	    glVertex3f(-w, h, d);
-
-	    //glTexCoord2f(1.0f, 1.0f);
-	    glTexCoord2f(tx, 1.0f);
-	    glVertex3f( w, h, d);
-
-	    glEnd();
-	    glPopMatrix();
-	}
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_ALPHA_TEST);
-    }
-
-    //	    void make_a_smoke()
-    //	    {
-    //		if (g.nsmokes < MAX_SMOKES) {
-    //		    Smoke *s = &g.smoke[g.nsmokes];
-    //		    s->pos[0] = rnd() * 5.0 - 2.5;
-    //		    s->pos[2] = rnd() * 5.0 - 2.5;
-    //		    s->pos[1] = rnd() * 0.1 + 0.1;
-    //		    s->separate = true; 
-    //		    s->radius = rnd() * 1.0 + 0.5;
-    //		    s->n = rand() % 5 + 5;
-    //		    Flt angle = 0.0;
-    //		    Flt inc = (PI*2.0) / (Flt)s->n;
-    //		    for (int i=0; i<s->n; i++) {
-    //			s->vert[i][0] = cos(angle) * s->radius;
-    //			s->vert[i][1] = sin(angle) * s->radius;
-    //			s->vert[i][2] = 0.0;
-    //			angle += inc;
-    //		    }
-    //		    s->maxtime = 8.0;
-    //		    s->alpha = 65.0;
-    //		    clock_gettime(CLOCK_REALTIME, &s->tstart);
-    //		    ++g.nsmokes;
-    //		}
-    //	    }
+    m[2][0] = out[0];
+    //m[2][1] = out[1];
+    m[2][2] = out[2];
+    Vec up = { -out[1] * out[0], upv[1] - out[1] * out[1], -out[1] * out[2] };
     //
-    //	    // Used to make child smokes
-    //	    void make_a_smoke(Flt x, Flt y, Flt z, Flt r, Flt m, struct timespec t)
-    //	    {
-    //		if (g.nsmokes < MAX_SMOKES) {
-    //		    Smoke *s = &g.smoke[g.nsmokes];
-    //		    s->pos[0] = rnd()* 5.0 + x;
-    //		    s->pos[2] = rnd()* 5.0 + z;
-    //		    s->pos[1] = y;
-    //		    s->separate = false;
-    //		    s->radius = r/2;
-    //		    s->n = rand() % 5 + 5;
-    //		    Flt angle = 0.0;
-    //		    Flt inc = (PI*2.0) / (Flt)s->n;
-    //		    for (int i=0; i<s->n; i++) {
-    //			s->vert[i][0] = cos(angle) * s->radius;
-    //			s->vert[i][1] = sin(angle) * s->radius;
-    //			s->vert[i][2] = 0.0;
-    //			angle += inc;
-    //		    }
-    //		    s->maxtime = m;
-    //		    s->alpha = 65.0;
-    //		    s->tstart = t;
-    //		    ++g.nsmokes;
-    //		}
-    //	    }
+    len = up[0]*up[0] + up[1]*up[1] + up[2]*up[2];
+    if (len == 0.0f) {
+	MakeVector(0.0f,0.0f,1.0f,up);
+    }
+    else {
+	l1 = 1.0f / sqrtf(len);
+	up[0] *= l1;
+	up[1] *= l1;
+	up[2] *= l1;
+    }
+
+    //make left vector.
+    VecCross(up, out, m[0]);
+}
 
 
-    void shootFireball(Flt x, Flt y, Flt z) {
+void vecNormalize(Vec v)
+{
+    Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+    if (len == 0.0)
+	return;
+    len = 1.0 / sqrt(len);
+    v[0] *= len;
+    v[1] *= len;
+    v[2] *= len;
+}
 
-	Flt speed = .125;
+void vecScale(Vec v, Flt s)
+{
+    v[0] *= s;
+    v[1] *= s;
+    v[2] *= s;
+}
+
+void drawBrutes()
+{
+    Flt w = 0.5;
+    Flt d = 0.75;
+    Flt h = 0.0;
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    for (int i = 0; i < g.nbrutes; i++) {
+
+	glPushMatrix();
+	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, bruteSilhouette);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+
+	glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1]-.25, g.brutes[i].pos[2]);
+	//glTranslated(g.brutes[i].pos[0], g.brutes[i].pos[1]-.5, g.brutes[i].pos[2]);
+	///// Billboarding
+	//Setup camera rotation matrix
+	//
+	Vec v;
+	VecSub(g.brutes[i].pos, g.cam.pos, v);
+	Vec z = {0.0f, 0.0f, 0.0f};
+	make_view_matrix(z, v, g.cameraMatrix);
+	//
+	//Billboard_to_camera();
+	//
+	float mat[16];
+	mat[ 0] = g.cameraMatrix[0][0];
+	mat[ 1] = g.cameraMatrix[0][1];
+	mat[ 2] = g.cameraMatrix[0][2];
+	mat[ 4] = g.cameraMatrix[1][0];
+	mat[ 5] = g.cameraMatrix[1][1];
+	mat[ 6] = g.cameraMatrix[1][2];
+	mat[ 8] = g.cameraMatrix[2][0];
+	mat[ 9] = g.cameraMatrix[2][1];
+	mat[10] = g.cameraMatrix[2][2];
+	mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	mat[15] = 1.0f;
+	glMultMatrixf(mat);
+	//
+	///// End Billboarding
+
+	float tx = g.brutes[i].spriteFrame * .5;
+
+	glRotatef(90, 1, 0, 0);
+	glBegin(GL_QUADS);
+
+	//glTexCoord2f(0.0f, 1.0f);
+	glTexCoord2f(tx, 0.0f);
+	glVertex3f( w, h,-d);
+
+	//glTexCoord2f(0.0f, 0.0f);
+	glTexCoord2f(tx+.5, 0.0f);
+	glVertex3f(-w, h,-d);
+
+	//glTexCoord2f(1.0f, 0.0f);
+	glTexCoord2f(tx+.5, 1.0f);
+	glVertex3f(-w, h, d);
+
+	//glTexCoord2f(1.0f, 1.0f);
+	glTexCoord2f(tx, 1.0f);
+	glVertex3f( w, h, d);
+
+	glEnd();
+	glPopMatrix();
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_ALPHA_TEST);
+}
+
+void drawFliers()
+{
+    Flt w = 0.35;
+    Flt d = 0.35;
+    Flt h = 0.0;
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    for (int i = 0; i < g.nfliers; i++) {
+
+	glPushMatrix();
+	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, flierSilhouette);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+
+	glTranslated(g.fliers[i].pos[0], g.fliers[i].pos[1]-.5, g.fliers[i].pos[2]);
+	///// Billboarding
+	//Setup camera rotation matrix
+	//
+	Vec v;
+	VecSub(g.fliers[i].pos, g.cam.pos, v);
+	Vec z = {0.0f, 0.0f, 0.0f};
+	make_view_matrix(z, v, g.cameraMatrix);
+	//
+	//Billboard_to_camera();
+	//
+	float mat[16];
+	mat[ 0] = g.cameraMatrix[0][0];
+	mat[ 1] = g.cameraMatrix[0][1];
+	mat[ 2] = g.cameraMatrix[0][2];
+	mat[ 4] = g.cameraMatrix[1][0];
+	mat[ 5] = g.cameraMatrix[1][1];
+	mat[ 6] = g.cameraMatrix[1][2];
+	mat[ 8] = g.cameraMatrix[2][0];
+	mat[ 9] = g.cameraMatrix[2][1];
+	mat[10] = g.cameraMatrix[2][2];
+	mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	mat[15] = 1.0f;
+	glMultMatrixf(mat);
+	//
+	///// End Billboarding
+
+	float tx = g.fliers[i].spriteFrame * .25;
+
+	glRotatef(90, 1, 0, 0);
+	glBegin(GL_QUADS);
+
+	glTexCoord2f(tx, 0.0f);
+	glVertex3f( w, h,-d);
+
+	glTexCoord2f(tx+.25, 0.0f);
+	glVertex3f(-w, h,-d);
+
+	glTexCoord2f(tx+.25, 1.0f);
+	glVertex3f(-w, h, d);
+
+	glTexCoord2f(tx, 1.0f);
+	glVertex3f( w, h, d);
+
+	glEnd();
+	glPopMatrix();
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_ALPHA_TEST);
+}
+
+void drawFireballs()
+{
+    Flt w = 0.15;
+    Flt d = 0.15;
+    Flt h = 0.0;
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    for (int i = 0; i < g.nfireballs; i++) {
+
+	glPushMatrix();
+	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, fireballSilhouette);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+
+	glTranslated(g.fireballs[i].pos[0], g.fireballs[i].pos[1]-.5, g.fireballs[i].pos[2]);
+	///// Billboarding
+	//Setup camera rotation matrix
+	//
+	Vec v;
+	VecSub(g.fireballs[i].pos, g.cam.pos, v);
+	Vec z = {0.0f, 0.0f, 0.0f};
+	make_view_matrix(z, v, g.cameraMatrix);
+	//
+	//Billboard_to_camera();
+	//
+	float mat[16];
+	mat[ 0] = g.cameraMatrix[0][0];
+	mat[ 1] = g.cameraMatrix[0][1];
+	mat[ 2] = g.cameraMatrix[0][2];
+	mat[ 4] = g.cameraMatrix[1][0];
+	mat[ 5] = g.cameraMatrix[1][1];
+	mat[ 6] = g.cameraMatrix[1][2];
+	mat[ 8] = g.cameraMatrix[2][0];
+	mat[ 9] = g.cameraMatrix[2][1];
+	mat[10] = g.cameraMatrix[2][2];
+	mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	mat[15] = 1.0f;
+	glMultMatrixf(mat);
+	//
+	///// End Billboarding
+
+	float tx = g.fireballs[i].spriteFrame * .20;
+
+	glRotatef(90, 1, 0, 0);
+	glBegin(GL_QUADS);
+
+	glTexCoord2f(tx, 0.0f);
+	glVertex3f( w, h,-d);
+
+	glTexCoord2f(tx+.20, 0.0f);
+	glVertex3f(-w, h,-d);
+
+	glTexCoord2f(tx+.20, 1.0f);
+	glVertex3f(-w, h, d);
+
+	glTexCoord2f(tx, 1.0f);
+	glVertex3f( w, h, d);
+
+	glEnd();
+	glPopMatrix();
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_ALPHA_TEST);
+}
+
+
+void drawPortals()
+{
+    Flt w = 1.5;
+    Flt d = 1.5;
+    Flt h = 0.0;
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    for (int i = 0; i < g.nportals; i++) {
+
+	glPushMatrix();
+	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, portalSilhouette);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+
+	glTranslated(g.portals[i].pos[0], g.portals[i].pos[1]+.4, g.portals[i].pos[2]);
+	///// Billboarding
+	//Setup camera rotation matrix
+	//
+	Vec v;
+	VecSub(g.portals[i].pos, g.cam.pos, v);
+	Vec z = {0.0f, 0.0f, 0.0f};
+	make_view_matrix(z, v, g.cameraMatrix);
+	//
+	//Billboard_to_camera();
+	//
+	float mat[16];
+	mat[ 0] = g.cameraMatrix[0][0];
+	mat[ 1] = g.cameraMatrix[0][1];
+	mat[ 2] = g.cameraMatrix[0][2];
+	mat[ 4] = g.cameraMatrix[1][0];
+	mat[ 5] = g.cameraMatrix[1][1];
+	mat[ 6] = g.cameraMatrix[1][2];
+	mat[ 8] = g.cameraMatrix[2][0];
+	mat[ 9] = g.cameraMatrix[2][1];
+	mat[10] = g.cameraMatrix[2][2];
+	mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	mat[15] = 1.0f;
+	glMultMatrixf(mat);
+	//
+	///// End Billboarding
+
+	float tx = g.portals[i].spriteFrame * .20;
+
+	glRotatef(90, 1, 0, 0);
+	glBegin(GL_QUADS);
+
+	//glTexCoord2f(0.0f, 1.0f);
+	glTexCoord2f(tx, 0.0f);
+	glVertex3f( w, h,-d);
+
+	//glTexCoord2f(0.0f, 0.0f);
+	glTexCoord2f(tx+.20, 0.0f);
+	glVertex3f(-w, h,-d);
+
+	//glTexCoord2f(1.0f, 0.0f);
+	glTexCoord2f(tx+.20, 1.0f);
+	glVertex3f(-w, h, d);
+
+	//glTexCoord2f(1.0f, 1.0f);
+	glTexCoord2f(tx, 1.0f);
+	glVertex3f( w, h, d);
+
+	glEnd();
+	glPopMatrix();
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_ALPHA_TEST);
+}
+
+//	    void make_a_smoke()
+//	    {
+//		if (g.nsmokes < MAX_SMOKES) {
+//		    Smoke *s = &g.smoke[g.nsmokes];
+//		    s->pos[0] = rnd() * 5.0 - 2.5;
+//		    s->pos[2] = rnd() * 5.0 - 2.5;
+//		    s->pos[1] = rnd() * 0.1 + 0.1;
+//		    s->separate = true; 
+//		    s->radius = rnd() * 1.0 + 0.5;
+//		    s->n = rand() % 5 + 5;
+//		    Flt angle = 0.0;
+//		    Flt inc = (PI*2.0) / (Flt)s->n;
+//		    for (int i=0; i<s->n; i++) {
+//			s->vert[i][0] = cos(angle) * s->radius;
+//			s->vert[i][1] = sin(angle) * s->radius;
+//			s->vert[i][2] = 0.0;
+//			angle += inc;
+//		    }
+//		    s->maxtime = 8.0;
+//		    s->alpha = 65.0;
+//		    clock_gettime(CLOCK_REALTIME, &s->tstart);
+//		    ++g.nsmokes;
+//		}
+//	    }
+//
+//	    // Used to make child smokes
+//	    void make_a_smoke(Flt x, Flt y, Flt z, Flt r, Flt m, struct timespec t)
+//	    {
+//		if (g.nsmokes < MAX_SMOKES) {
+//		    Smoke *s = &g.smoke[g.nsmokes];
+//		    s->pos[0] = rnd()* 5.0 + x;
+//		    s->pos[2] = rnd()* 5.0 + z;
+//		    s->pos[1] = y;
+//		    s->separate = false;
+//		    s->radius = r/2;
+//		    s->n = rand() % 5 + 5;
+//		    Flt angle = 0.0;
+//		    Flt inc = (PI*2.0) / (Flt)s->n;
+//		    for (int i=0; i<s->n; i++) {
+//			s->vert[i][0] = cos(angle) * s->radius;
+//			s->vert[i][1] = sin(angle) * s->radius;
+//			s->vert[i][2] = 0.0;
+//			angle += inc;
+//		    }
+//		    s->maxtime = m;
+//		    s->alpha = 65.0;
+//		    s->tstart = t;
+//		    ++g.nsmokes;
+//		}
+//	    }
+
+
+void shootFireball(Flt x, Flt y, Flt z) {
+
+    Flt speed = .05;
+    //Flt speed = .125;
+
+    // Camera center - brute center
+    Vec v;
+    v[0] = g.cam.pos[0] - x;
+    v[1] = g.cam.pos[1] - y;
+    v[2] = g.cam.pos[2] - z;
+
+    // Normalize vector
+    Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+    Vec norm = {v[0]/len, v[1]/len, v[2]/len};
+
+    MakeVector(x, y, z, g.fireballs[g.nfireballs].pos);
+    MakeVector(norm[0]*speed, norm[1]*speed, norm[2]*speed, g.fireballs[g.nfireballs].dir);
+    g.nfireballs++;
+}
+
+
+void physics()
+{
+
+    // Player movement
+    if (g.key_states & g.w_mask) {
+	if (g.cam.pos[2] > -37.4f) {
+	    g.cam.moveForward();
+	}
+    }
+    if (g.key_states & g.a_mask) {
+	if (g.cam.pos[0] > -22.4f) {
+	    g.cam.moveLeft();
+	}
+    }
+    if (g.key_states & g.s_mask) {
+	if (g.cam.pos[2] < 7.4f) {
+	    g.cam.moveBackward();
+	}
+    }
+    if (g.key_states & g.d_mask) {
+	if (g.cam.pos[0] < 22.4f) {
+	    g.cam.moveRight();
+	}
+    }
+
+    for (int i = 0; i < g.nbrutes; i++) {
+
+	// Sprite Animation
+	g.brutes[i].timer.recordTime(&g.brutes[i].timer.timeCurrent);
+	double timeSpan = g.brutes[i].timer.timeDiff(&g.brutes[i].timer.animTime, &g.brutes[i].timer.timeCurrent);
+	if (timeSpan > g.brutes[i].delay) {
+	    ++g.brutes[i].spriteFrame;
+	    if(g.brutes[i].spriteFrame >= g.brutes[i].FRAMECOUNT)
+		g.brutes[i].spriteFrame = 0;
+	    g.brutes[i].timer.recordTime(&g.brutes[i].timer.animTime);
+	}
 
 	// Camera center - brute center
 	Vec v;
-	v[0] = g.cam.pos[0] - x;
-	v[1] = g.cam.pos[1] - y;
-	v[2] = g.cam.pos[2] - z;
+	v[0] = g.cam.pos[0] - g.brutes[i].pos[0];
+	v[1] = g.cam.pos[1] - g.brutes[i].pos[1];
+	v[2] = g.cam.pos[2] - g.brutes[i].pos[2];
+
+	// Normalize vector
+	Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+	if (len > 1.5) {
+	    Vec norm = {v[0]/len, v[1]/len, v[2]/len};
+
+	    g.brutes[i].vel[0] = norm[0]*.02;
+	    g.brutes[i].vel[1] = norm[1]*.02;
+	    g.brutes[i].vel[2] = norm[2]*.02;
+
+	    g.brutes[i].pos[0] += g.brutes[i].vel[0];
+	    g.brutes[i].pos[2] += g.brutes[i].vel[2];
+	}
+
+	// Left/Right wall collision
+	if (g.brutes[i].pos[0] < -22.0f) {
+	    g.brutes[i].pos[0] = -22.0f;
+	    g.brutes[i].vel[0] = 0;
+	} else if (g.brutes[i].pos[0] > 22.0f) {
+	    g.brutes[i].pos[0] = 22;
+	    g.brutes[i].vel[0] = 0;
+	}
+
+	// Back/Front wall collision
+	if (g.brutes[i].pos[2] < -37.0f) {
+	    g.brutes[i].pos[2] = -37.0f;
+	    g.brutes[i].vel[2] = 0;
+	} else if (g.brutes[i].pos[2] > 7.0f) {
+	    g.brutes[i].pos[2] = 7.0f;
+	    g.brutes[i].vel[2] = 0;
+	}
+
+
+
+    }
+
+    for (int i = 0; i < g.nfliers; i++) {
+
+	// Sprite Animation
+	g.fliers[i].timer.recordTime(&g.fliers[i].timer.timeCurrent);
+	double timeSpan = g.fliers[i].timer.timeDiff(&g.fliers[i].timer.animTime, &g.fliers[i].timer.timeCurrent);
+	if (timeSpan > g.fliers[i].delay) {
+	    ++g.fliers[i].spriteFrame;
+	    if(g.fliers[i].spriteFrame >= g.fliers[i].FRAMECOUNT)
+		g.fliers[i].spriteFrame = 0;
+	    g.fliers[i].timer.recordTime(&g.fliers[i].timer.animTime);
+	}
+
+
+	// Camera center - fliers center
+	Vec v;
+	v[0] = g.cam.pos[0] - g.fliers[i].pos[0];
+	v[1] = g.cam.pos[1] - g.fliers[i].pos[1];
+	v[2] = g.cam.pos[2] - g.fliers[i].pos[2];
 
 	// Normalize vector
 	Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 	Vec norm = {v[0]/len, v[1]/len, v[2]/len};
 
-	MakeVector(x, y, z, g.fireballs[g.nfireballs].pos);
-	MakeVector(norm[0]*speed, norm[1]*speed, norm[2]*speed, g.fireballs[g.nfireballs].dir);
-	g.nfireballs++;
+	g.fliers[i].vel[0] = norm[0]*.04;
+	g.fliers[i].vel[1] = norm[1]*.04;
+	g.fliers[i].vel[2] = norm[2]*.04;
+
+	if (len > 10) {
+	    g.fliers[i].pos[0] += g.fliers[i].vel[0];
+	    g.fliers[i].pos[2] += g.fliers[i].vel[2];
+	} else {
+	    g.fliers[i].pos[0] -= g.fliers[i].vel[0];
+	    g.fliers[i].pos[2] -= g.fliers[i].vel[2];
+	}
+
+	// Left/Right wall collision
+	if (g.fliers[i].pos[0] < -22.0f) {
+	    g.fliers[i].pos[0] = -22.0f;
+	    g.fliers[i].vel[0] = 0;
+	} else if (g.fliers[i].pos[0] > 22.0f) {
+	    g.fliers[i].pos[0] = 22;
+	    g.fliers[i].vel[0] = 0;
+	}
+
+	// Back/Front wall collision
+	if (g.fliers[i].pos[2] < -37.0f) {
+	    g.fliers[i].pos[2] = -37.0f;
+	    g.fliers[i].vel[2] = 0;
+	} else if (g.fliers[i].pos[2] > 7.0f) {
+	    g.fliers[i].pos[2] = 7.0f;
+	    g.fliers[i].vel[2] = 0;
+	}
+
+	//shootFireball(g.fliers[i].pos[0], g.fliers[i].pos[1], g.fliers[i].pos[2]);
     }
 
+    for (int i = 0; i < g.nfireballs; i++) {
 
-    void physics()
-    {
+	// Constant direction
+	g.fireballs[i].pos[0] += g.fireballs[i].dir[0];
+	g.fireballs[i].pos[1] += g.fireballs[i].dir[1];
+	g.fireballs[i].pos[2] += g.fireballs[i].dir[2];
 
-	// Player movement
-	if (g.key_states & g.w_mask) {
-	    if (g.cam.pos[2] > -37.4f) {
-		g.cam.moveForward();
+	// collision
+	if (g.fireballs[i].pos[0] < -22.4f || //
+	    g.fireballs[i].pos[0] > 22.4f  || //
+	    g.fireballs[i].pos[1] < 0	   || // floor
+	    g.fireballs[i].pos[2] < -37.4f || //
+	    g.fireballs[i].pos[2] > 7.4f)     //
+	{
+
+	    // Copy last fireball to current possition and decrement nfireballs
+	    if (g.nfireballs > 1) {
+		g.fireballs[i].pos[0] = g.fireballs[g.nfireballs-1].pos[0];
+		g.fireballs[i].pos[1] = g.fireballs[g.nfireballs-1].pos[1];
+		g.fireballs[i].pos[2] = g.fireballs[g.nfireballs-1].pos[2];
+		g.fireballs[i].dir[0] = g.fireballs[g.nfireballs-1].dir[0];
+		g.fireballs[i].dir[1] = g.fireballs[g.nfireballs-1].dir[1];
+		g.fireballs[i].dir[2] = g.fireballs[g.nfireballs-1].dir[2];
+	    }
+	    --g.nfireballs;
+
+	    // Move change current fireball if there are still fireballs
+	    if (g.nfireballs > 0) {
+		g.fireballs[i].pos[0] += g.fireballs[i].dir[0];
+		g.fireballs[i].pos[1] += g.fireballs[i].dir[1];
+		g.fireballs[i].pos[2] += g.fireballs[i].dir[2];
 	    }
 	}
-	if (g.key_states & g.a_mask) {
-	    if (g.cam.pos[0] > -22.4f) {
-		g.cam.moveLeft();
-	    }
-	}
-	if (g.key_states & g.s_mask) {
-	    if (g.cam.pos[2] < 7.4f) {
-		g.cam.moveBackward();
-	    }
-	}
-	if (g.key_states & g.d_mask) {
-	    if (g.cam.pos[0] < 22.4f) {
-		g.cam.moveRight();
-	    }
-	}
-
-	for (int i = 0; i < g.nbrutes; i++) {
-
-	    // Sprite Animation
-	    g.brutes[i].timer.recordTime(&g.brutes[i].timer.timeCurrent);
-	    double timeSpan = g.brutes[i].timer.timeDiff(&g.brutes[i].timer.animTime, &g.brutes[i].timer.timeCurrent);
-	    if (timeSpan > g.brutes[i].delay) {
-		++g.brutes[i].spriteFrame;
-		if(g.brutes[i].spriteFrame >= g.brutes[i].FRAMECOUNT)
-		    g.brutes[i].spriteFrame = 0;
-		g.brutes[i].timer.recordTime(&g.brutes[i].timer.animTime);
-	    }
-
-	    // Camera center - brute center
-	    Vec v;
-	    v[0] = g.cam.pos[0] - g.brutes[i].pos[0];
-	    v[1] = g.cam.pos[1] - g.brutes[i].pos[1];
-	    v[2] = g.cam.pos[2] - g.brutes[i].pos[2];
-
-	    // Normalize vector
-	    Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-	    if (len > 1.5) {
-		Vec norm = {v[0]/len, v[1]/len, v[2]/len};
-
-		g.brutes[i].vel[0] = norm[0]*.02;
-		g.brutes[i].vel[1] = norm[1]*.02;
-		g.brutes[i].vel[2] = norm[2]*.02;
-
-		g.brutes[i].pos[0] += g.brutes[i].vel[0];
-		g.brutes[i].pos[2] += g.brutes[i].vel[2];
-	    }
-
-	    // Left/Right wall collision
-	    if (g.brutes[i].pos[0] < -22.0f) {
-		g.brutes[i].pos[0] = -22.0f;
-		g.brutes[i].vel[0] = 0;
-	    } else if (g.brutes[i].pos[0] > 22.0f) {
-		g.brutes[i].pos[0] = 22;
-		g.brutes[i].vel[0] = 0;
-	    }
-
-	    // Back/Front wall collision
-	    if (g.brutes[i].pos[2] < -37.0f) {
-		g.brutes[i].pos[2] = -37.0f;
-		g.brutes[i].vel[2] = 0;
-	    } else if (g.brutes[i].pos[2] > 7.0f) {
-		g.brutes[i].pos[2] = 7.0f;
-		g.brutes[i].vel[2] = 0;
-	    }
 
 
-
-	}
-
-	for (int i = 0; i < g.nfliers; i++) {
-
-	    // Sprite Animation
-	    g.fliers[i].timer.recordTime(&g.fliers[i].timer.timeCurrent);
-	    double timeSpan = g.fliers[i].timer.timeDiff(&g.fliers[i].timer.animTime, &g.fliers[i].timer.timeCurrent);
-	    if (timeSpan > g.fliers[i].delay) {
-		++g.fliers[i].spriteFrame;
-		if(g.fliers[i].spriteFrame >= g.fliers[i].FRAMECOUNT)
-		    g.fliers[i].spriteFrame = 0;
-		g.fliers[i].timer.recordTime(&g.fliers[i].timer.animTime);
-	    }
-
-
-	    // Camera center - fliers center
-	    Vec v;
-	    v[0] = g.cam.pos[0] - g.fliers[i].pos[0];
-	    v[1] = g.cam.pos[1] - g.fliers[i].pos[1];
-	    v[2] = g.cam.pos[2] - g.fliers[i].pos[2];
-
-	    // Normalize vector
-	    Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-	    Vec norm = {v[0]/len, v[1]/len, v[2]/len};
-
-	    g.fliers[i].vel[0] = norm[0]*.04;
-	    g.fliers[i].vel[1] = norm[1]*.04;
-	    g.fliers[i].vel[2] = norm[2]*.04;
-
-	    if (len > 10) {
-		g.fliers[i].pos[0] += g.fliers[i].vel[0];
-		g.fliers[i].pos[2] += g.fliers[i].vel[2];
-	    } else {
-		g.fliers[i].pos[0] -= g.fliers[i].vel[0];
-		g.fliers[i].pos[2] -= g.fliers[i].vel[2];
-	    }
-
-	    // Left/Right wall collision
-	    if (g.fliers[i].pos[0] < -22.0f) {
-		g.fliers[i].pos[0] = -22.0f;
-		g.fliers[i].vel[0] = 0;
-	    } else if (g.fliers[i].pos[0] > 22.0f) {
-		g.fliers[i].pos[0] = 22;
-		g.fliers[i].vel[0] = 0;
-	    }
-
-	    // Back/Front wall collision
-	    if (g.fliers[i].pos[2] < -37.0f) {
-		g.fliers[i].pos[2] = -37.0f;
-		g.fliers[i].vel[2] = 0;
-	    } else if (g.fliers[i].pos[2] > 7.0f) {
-		g.fliers[i].pos[2] = 7.0f;
-		g.fliers[i].vel[2] = 0;
-	    }
-
-	    //shootFireball(g.fliers[i].pos[0], g.fliers[i].pos[1], g.fliers[i].pos[2]);
-	}
-
-	for (int i = 0; i < g.nfireballs; i++) {
-
+	if (g.nfireballs > 0) {
 	    // Sprite Animation
 	    g.fireballs[i].timer.recordTime(&g.fireballs[i].timer.timeCurrent);
 	    double timeSpan = g.fireballs[i].timer.timeDiff(&g.fireballs[i].timer.animTime, &g.fireballs[i].timer.timeCurrent);
@@ -1568,215 +1600,212 @@ void check_mouse(XEvent *e)
 		    g.fireballs[i].spriteFrame = 0;
 		g.fireballs[i].timer.recordTime(&g.fireballs[i].timer.animTime);
 	    }
-
-	    // Constant direction
-	    g.fireballs[i].pos[0] += g.fireballs[i].dir[0];
-	    g.fireballs[i].pos[1] += g.fireballs[i].dir[1];
-	    g.fireballs[i].pos[2] += g.fireballs[i].dir[2];
 	}
 
+    }
 
 
-	for (int i = 0; i < g.nportals; i++) {
 
-	    // Sprite Animation
-	    g.portals[i].timer.recordTime(&g.portals[i].timer.timeCurrent);
-	    double timeSpan = g.portals[i].timer.timeDiff(&g.portals[i].timer.animTime, &g.portals[i].timer.timeCurrent);
-	    if (timeSpan > g.portals[i].delay) {
-		++g.portals[i].spriteFrame;
-		if(g.portals[i].spriteFrame >= g.portals[i].FRAMECOUNT)
-		    g.portals[i].spriteFrame = 0;
-		g.portals[i].timer.recordTime(&g.portals[i].timer.animTime);
-	    }
+    for (int i = 0; i < g.nportals; i++) {
+
+	// Sprite Animation
+	g.portals[i].timer.recordTime(&g.portals[i].timer.timeCurrent);
+	double timeSpan = g.portals[i].timer.timeDiff(&g.portals[i].timer.animTime, &g.portals[i].timer.timeCurrent);
+	if (timeSpan > g.portals[i].delay) {
+	    ++g.portals[i].spriteFrame;
+	    if(g.portals[i].spriteFrame >= g.portals[i].FRAMECOUNT)
+		g.portals[i].spriteFrame = 0;
+	    g.portals[i].timer.recordTime(&g.portals[i].timer.animTime);
 	}
-
-
-	/////// From smoke lab
-	//		clock_gettime(CLOCK_REALTIME, &g.smokeTime);
-	//		double d = timeDiff(&g.smokeStart, &g.smokeTime);
-	//		if (d > 0.05) {
-	//		    //time to make another smoke particle
-	//		    make_a_smoke();
-	//		    timeCopy(&g.smokeStart, &g.smokeTime);
-	//		}
-	//		//move smoke particles
-	//		for (int i=0; i<g.nsmokes; i++) {
-	//		    //smoke rising
-	//		    g.smoke[i].pos[1] += 0.015;
-	//		    g.smoke[i].pos[1] += ((g.smoke[i].pos[1]*0.24) * (rnd() * 0.075));
-	//
-	//		    //expand particle as it rises
-	//		    g.smoke[i].radius += g.smoke[i].pos[1]*0.002;
-	//		    //wind might blow particle
-	//		    if (g.smoke[i].pos[1] > 10.0) {
-	//			g.smoke[i].pos[0] -= rnd() * 0.1;
-	//		    }
-	//		    // break apart
-	//		    if ((g.smoke[i].pos[1] > rnd() * 20 + 20) & g.smoke[i].separate) {
-	//			// Save vars from parent smoke
-	//			Flt x = g.smoke[i].pos[0];
-	//			Flt y = g.smoke[i].pos[1];
-	//			Flt z = g.smoke[i].pos[2];
-	//			Flt r = g.smoke[i].radius;
-	//			Flt m = g.smoke[i].maxtime;
-	//			struct timespec t = g.smoke[i].tstart;
-	//			// Delete parent smoke
-	//			--g.nsmokes;
-	//			g.smoke[i] = g.smoke[g.nsmokes];
-	//			// Generate two new child smokes
-	//			make_a_smoke(x, y, z, r, m, t);
-	//			make_a_smoke(x, y, z, r, m, t);
-	//		    }
-	//		}
-	//		//check for smoke out of time
-	//		int i=0;
-	//		while (i < g.nsmokes) {
-	//		    struct timespec bt;
-	//		    clock_gettime(CLOCK_REALTIME, &bt);
-	//		    double d = timeDiff(&g.smoke[i].tstart, &bt);
-	//		    if (d > g.smoke[i].maxtime - 3.0) {
-	//			g.smoke[i].alpha *= 0.95;
-	//			if (g.smoke[i].alpha < 1.0)
-	//			    g.smoke[i].alpha = 1.0;
-	//		    }
-	//		    if (d > g.smoke[i].maxtime) {
-	//			//delete this smoke
-	//			--g.nsmokes;
-	//			g.smoke[i] = g.smoke[g.nsmokes];
-	//			continue;
-	//		    }
-	//		    ++i;
-	//		}
-	//		//
-	//		if (g.circling) {
-	//		    Flt rad = 80 + sin(g.cameraAngle) * 50.0;
-	//		    Flt x = cos(g.cameraAngle) * rad;
-	//		    Flt z = sin(g.cameraAngle) * rad;
-	//		    Flt y = 25.0;
-	//		    MakeVector(x, y, z, g.cam.pos);
-	//		    g.cameraAngle -= 0.01;
-	//		}
-
-
-
-    }
-
-    void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
-    {
-	image = ppm6GetImage(imagePath);
-	glGenTextures(1, texture);
-
-	// Image
-	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3,
-		image->width, image->height,
-		0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
-    }
-
-    unsigned char *buildAlphaData(Ppmimage *img) {
-	int i, a, b, c;
-	unsigned char *newdata, *ptr;
-	unsigned char *data = (unsigned char *) img->data;
-	newdata = (unsigned char *)malloc(img->width * img->height * 4);
-	ptr = newdata;
-	for (i = 0; i<img->width * img->height * 3; i+=3) {
-	    a = *(data+0);
-	    b = *(data+1);
-	    c = *(data+2);
-	    *(ptr+0) = a;
-	    *(ptr+1) = b;
-	    *(ptr+2) = c;
-	    *(ptr+3) = (a|b|c);
-	    ptr += 4;
-	    data += 3;
-	}
-	return newdata;
-    }
-
-    void init_alpha_image(char * imagePath, Ppmimage * image,
-	    GLuint * texture, GLuint * silhouette)
-    {
-	image = ppm6GetImage(imagePath);
-	glGenTextures(1, silhouette);
-	glGenTextures(1, texture);
-
-	// Image
-	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3,
-		image->width, image->height,
-		0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
-
-	// Alpha
-	glBindTexture(GL_TEXTURE_2D,*silhouette);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-
-	unsigned char *silhouetteData = buildAlphaData(image);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		image->width, image->height,
-		0, GL_RGBA, GL_UNSIGNED_BYTE, silhouetteData);
-	free(silhouetteData);
     }
 
 
-    void render()
-    {
-	//Clear the depth buffer and screen.
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	//
-	//Render a 3D scene
-	//
-	glEnable(GL_LIGHTING);
-	glMatrixMode(GL_PROJECTION); glLoadIdentity();
-	gluPerspective(45.0f, g.aspectRatio, 0.1f, 100.0f);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+    /////// From smoke lab
+    //		clock_gettime(CLOCK_REALTIME, &g.smokeTime);
+    //		double d = timeDiff(&g.smokeStart, &g.smokeTime);
+    //		if (d > 0.05) {
+    //		    //time to make another smoke particle
+    //		    make_a_smoke();
+    //		    timeCopy(&g.smokeStart, &g.smokeTime);
+    //		}
+    //		//move smoke particles
+    //		for (int i=0; i<g.nsmokes; i++) {
+    //		    //smoke rising
+    //		    g.smoke[i].pos[1] += 0.015;
+    //		    g.smoke[i].pos[1] += ((g.smoke[i].pos[1]*0.24) * (rnd() * 0.075));
+    //
+    //		    //expand particle as it rises
+    //		    g.smoke[i].radius += g.smoke[i].pos[1]*0.002;
+    //		    //wind might blow particle
+    //		    if (g.smoke[i].pos[1] > 10.0) {
+    //			g.smoke[i].pos[0] -= rnd() * 0.1;
+    //		    }
+    //		    // break apart
+    //		    if ((g.smoke[i].pos[1] > rnd() * 20 + 20) & g.smoke[i].separate) {
+    //			// Save vars from parent smoke
+    //			Flt x = g.smoke[i].pos[0];
+    //			Flt y = g.smoke[i].pos[1];
+    //			Flt z = g.smoke[i].pos[2];
+    //			Flt r = g.smoke[i].radius;
+    //			Flt m = g.smoke[i].maxtime;
+    //			struct timespec t = g.smoke[i].tstart;
+    //			// Delete parent smoke
+    //			--g.nsmokes;
+    //			g.smoke[i] = g.smoke[g.nsmokes];
+    //			// Generate two new child smokes
+    //			make_a_smoke(x, y, z, r, m, t);
+    //			make_a_smoke(x, y, z, r, m, t);
+    //		    }
+    //		}
+    //		//check for smoke out of time
+    //		int i=0;
+    //		while (i < g.nsmokes) {
+    //		    struct timespec bt;
+    //		    clock_gettime(CLOCK_REALTIME, &bt);
+    //		    double d = timeDiff(&g.smoke[i].tstart, &bt);
+    //		    if (d > g.smoke[i].maxtime - 3.0) {
+    //			g.smoke[i].alpha *= 0.95;
+    //			if (g.smoke[i].alpha < 1.0)
+    //			    g.smoke[i].alpha = 1.0;
+    //		    }
+    //		    if (d > g.smoke[i].maxtime) {
+    //			//delete this smoke
+    //			--g.nsmokes;
+    //			g.smoke[i] = g.smoke[g.nsmokes];
+    //			continue;
+    //		    }
+    //		    ++i;
+    //		}
+    //		//
+    //		if (g.circling) {
+    //		    Flt rad = 80 + sin(g.cameraAngle) * 50.0;
+    //		    Flt x = cos(g.cameraAngle) * rad;
+    //		    Flt z = sin(g.cameraAngle) * rad;
+    //		    Flt y = 25.0;
+    //		    MakeVector(x, y, z, g.cam.pos);
+    //		    g.cameraAngle -= 0.01;
+    //		}
 
 
 
-	// Camera that can move on x&z and look on x,y,&z
-	gluLookAt(g.cam.pos[0] , 0.0f , g.cam.pos[2],
-		g.cam.view[0], g.cam.view[1], g.cam.view[2],
-		g.cam.upv[0],  g.cam.upv[1], g.cam.upv[2]);
+}
 
-	glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
-	//
-	drawFloor();
-	drawWall();
-	drawPortals();
-	drawBrutes();
-	drawFliers();
-	drawFireballs();
-	//
-	//
-	//switch to 2D mode
-	//
-	Rect r;
-	glViewport(0, 0, g.xres, g.yres);
-	glMatrixMode(GL_MODELVIEW);   glLoadIdentity();
-	glMatrixMode (GL_PROJECTION); glLoadIdentity();
-	gluOrtho2D(0, g.xres, 0, g.yres);
-	glDisable(GL_LIGHTING);
-	r.bot = g.yres - 20;
-	r.left = 10;
-	r.center = 0;
-	ggprint8b(&r, 16, 0x00887766, "4490 OpenGL");
-	ggprint8b(&r, 16, 0x00887766, "Camera Info:");
-	ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.cam.pos[0], g.cam.pos[1], g.cam.pos[2]);
-	ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.cam.view[0], g.cam.view[1], g.cam.view[2]);
-	ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.cam.vel[0], g.cam.vel[2]);
+void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
+{
+    image = ppm6GetImage(imagePath);
+    glGenTextures(1, texture);
 
-	ggprint8b(&r, 16, 0x00887766, "Controls:");
-	ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
-	ggprint8b(&r, 16, 0x00887766, "    w/s: Move Forward/Backward");
-	ggprint8b(&r, 16, 0x00887766, "    a/d: Look Left/Right");
-	ggprint8b(&r, 16, 0x00887766, "    e/q: Strafe Left/Right");
-	ggprint8b(&r, 16, 0x00887766, "    c/z: Strafe Up/Down");
+    // Image
+    glBindTexture(GL_TEXTURE_2D, *texture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3,
+	    image->width, image->height,
+	    0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
+}
+
+unsigned char *buildAlphaData(Ppmimage *img) {
+    int i, a, b, c;
+    unsigned char *newdata, *ptr;
+    unsigned char *data = (unsigned char *) img->data;
+    newdata = (unsigned char *)malloc(img->width * img->height * 4);
+    ptr = newdata;
+    for (i = 0; i<img->width * img->height * 3; i+=3) {
+	a = *(data+0);
+	b = *(data+1);
+	c = *(data+2);
+	*(ptr+0) = a;
+	*(ptr+1) = b;
+	*(ptr+2) = c;
+	*(ptr+3) = (a|b|c);
+	ptr += 4;
+	data += 3;
     }
+    return newdata;
+}
+
+void init_alpha_image(char * imagePath, Ppmimage * image,
+	GLuint * texture, GLuint * silhouette)
+{
+    image = ppm6GetImage(imagePath);
+    glGenTextures(1, silhouette);
+    glGenTextures(1, texture);
+
+    // Image
+    glBindTexture(GL_TEXTURE_2D, *texture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3,
+	    image->width, image->height,
+	    0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
+
+    // Alpha
+    glBindTexture(GL_TEXTURE_2D,*silhouette);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+
+    unsigned char *silhouetteData = buildAlphaData(image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+	    image->width, image->height,
+	    0, GL_RGBA, GL_UNSIGNED_BYTE, silhouetteData);
+    free(silhouetteData);
+}
+
+
+void render()
+{
+    //Clear the depth buffer and screen.
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    //
+    //Render a 3D scene
+    //
+    glEnable(GL_LIGHTING);
+    glMatrixMode(GL_PROJECTION); glLoadIdentity();
+    gluPerspective(45.0f, g.aspectRatio, 0.1f, 100.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+
+
+    // Camera that can move on x&z and look on x,y,&z
+    gluLookAt(g.cam.pos[0] , 0.0f , g.cam.pos[2],
+	    g.cam.view[0], g.cam.view[1], g.cam.view[2],
+	    g.cam.upv[0],  g.cam.upv[1], g.cam.upv[2]);
+
+    glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
+    //
+    drawFloor();
+    drawWall();
+    drawPortals();
+    drawBrutes();
+    drawFliers();
+    drawFireballs();
+    //
+    //
+    //switch to 2D mode
+    //
+    Rect r;
+    glViewport(0, 0, g.xres, g.yres);
+    glMatrixMode(GL_MODELVIEW);   glLoadIdentity();
+    glMatrixMode (GL_PROJECTION); glLoadIdentity();
+    gluOrtho2D(0, g.xres, 0, g.yres);
+    glDisable(GL_LIGHTING);
+    r.bot = g.yres - 20;
+    r.left = 10;
+    r.center = 0;
+    ggprint8b(&r, 16, 0x00887766, "4490 OpenGL");
+    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
+    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.cam.pos[0], g.cam.pos[1], g.cam.pos[2]);
+    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.cam.view[0], g.cam.view[1], g.cam.view[2]);
+    ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.cam.vel[0], g.cam.vel[2]);
+
+    ggprint8b(&r, 16, 0x00887766, "Controls:");
+    ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
+    ggprint8b(&r, 16, 0x00887766, "    w/s: Move Forward/Backward");
+    ggprint8b(&r, 16, 0x00887766, "    a/d: Look Left/Right");
+    ggprint8b(&r, 16, 0x00887766, "    e/q: Strafe Left/Right");
+    ggprint8b(&r, 16, 0x00887766, "    c/z: Strafe Up/Down");
+}
 
 
 
