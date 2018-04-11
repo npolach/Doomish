@@ -209,7 +209,7 @@ class Camera {
 
 	void lookUp() 
 	{
-	    angleV -= 0.0225f;
+	    angleV -= 0.0175f;
 	    if (angleV < -1.0)
 		angleV = -1.0;
 
@@ -218,7 +218,7 @@ class Camera {
 
 	void lookDown() 
 	{
-	    angleV += 0.0225f;
+	    angleV += 0.0175f;
 	    if (angleV > 1.0)
 		angleV = 1.0;
 
@@ -227,14 +227,14 @@ class Camera {
 
 	void lookLeft() 
 	{
-	    angleH += 0.0225f;
+	    angleH += 0.0175f;
 	    view[0] = pos[0] + sin(angleH);
 	    view[2] = pos[2] + -cos(angleH);
 	}
 
 	void lookRight() 
 	{
-	    angleH -= 0.0225f;
+	    angleH -= 0.0175f;
 	    view[0] = pos[0] + sin(angleH);
 	    view[2] = pos[2] + -cos(angleH);
 	}
@@ -766,26 +766,10 @@ void check_mouse(XEvent *e)
 
     static int savex = 0;
     static int savey = 0;
-    //bool skip = false;
-    //static int ct=0;
-    //	if (e->type == ButtonRelease) {
-    //		return;
-    //	}
-    //	if (e->type == ButtonPress) {
-    //		if (e->xbutton.button==1) {
-    //			//Left button is down
-    //		}
-    //		if (e->xbutton.button==3) {
-    //			//Right button is down
-    //		}
-    //	}
     if (savex != e->xbutton.x || savey != e->xbutton.y) {
-	//if ((savex != e->xbutton.x || savey != e->xbutton.y) && !skip) {
 	//Mouse moved
 	int xdiff = savex - e->xbutton.x;
 	int ydiff = savey - e->xbutton.y;
-	//if (++ct < 10)
-	//	return;
 	if (xdiff < 0) {
 	    g.cam.lookLeft();
 
@@ -802,10 +786,9 @@ void check_mouse(XEvent *e)
 	    g.cam.lookDown();
 
 	}
+	savex = g.xres/2;
+	savey = g.yres/2;
 	x11.set_mouse_position(g.xres/2,g.yres/2);
-	savex = e->xbutton.x;
-	savey = e->xbutton.y;
-	//skip = !skip;
     }
     }
 
