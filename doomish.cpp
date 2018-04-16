@@ -1,19 +1,4 @@
-//
 //modified by: Nick Polach
-//date: 01/23/18
-//
-//program: openg.cpp
-//author:  Gordon Griesel
-//date:    Spring 2018
-//
-//An OpenGL 3D framework for students.
-//
-//Goal:
-//     1. setup the keyboard input to move the camera location
-//        and camera viewing direction.
-//     2. move the camera down and to the left to line-up with the hole
-//     3. move the camera smoothly through the hole in the wall
-//
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,9 +31,6 @@ typedef Flt Matrix[4][4];
 //some constants
 const Flt PI = 3.141592653589793;
 const Vec upv = {0.0, 1.0, 0.0};
-// From smoke lab
-const int MAX_SMOKES = 400;
-
 
 Ppmimage * bruteImage;
 GLuint bruteTexture;
@@ -72,7 +54,7 @@ GLuint floor1Texture;
 Ppmimage * wall1Image=NULL;
 GLuint wall1Texture;
 
-class Camera {
+class Player {
     public:
 	Vec pos;
 	Vec vel;
@@ -83,7 +65,7 @@ class Camera {
 	Flt moveSpeed;
 	Flt strafeSpeed;
 
-	Camera() {
+	Player() {
 	    MakeVector(0.0, 0.0, 5.0, pos);
 	    MakeVector(0.0, 0.0, 0.0, view);
 	    MakeVector(0.0, 0.0, 0.0, vel);
@@ -242,15 +224,6 @@ class Camera {
 
 };
 
-
-////-----------------------------------------------------------------------------
-//////Setup timers
-//const double OOBILLION = 1.0 / 1e9;
-//extern struct timespec timeStart, timeCurrent;
-//extern double timeDiff(struct timespec *start, struct timespec *end);
-//extern void timeCopy(struct timespec *dest, struct timespec *source);
-//////-----------------------------------------------------------------------------
-
 //Setup timers
 class Timers {
     public:
@@ -327,24 +300,6 @@ class Fireball {
 
 };
 
-
-//// From smoke lab
-//class Smoke {
-//	public:
-//		Vec pos;
-//		Vec vert[16];
-//		Flt radius;
-//		Flt camDist;
-//		Flt groundDist;
-//		int n;
-//		struct timespec tstart;
-//		Flt maxtime;
-//		Flt alpha;
-//		bool separate;
-//
-//		Smoke() { }
-//};
-
 class Portal {
     public:
 	Vec pos;
@@ -357,27 +312,13 @@ class Portal {
 	    delay = 0.1;
 	    FRAMECOUNT = 5;
 	}
-
-	//		struct timespec smokeStart, smokeTime;
-	//		Smoke * smoke;
-	//		int nsmokes;
-	//		~Portal() {
-	//			if (smoke)
-	//				delete [] smoke;
-	//		}
-	//
-	//		Portal() {
-	//			clock_gettime(CLOCK_REALTIME, &smokeStart);
-	//			nsmokes = 0;
-	//			smoke = new Smoke[MAX_SMOKES];
-	//		}
 };
 
 class Global {
     public:
 	int xres, yres;
 	Flt aspectRatio;
-	Camera cam;
+	Player player;
 	Matrix cameraMatrix;
 	unsigned char key_states;
 	unsigned char w_mask;
@@ -396,10 +337,14 @@ class Global {
 
 	Global() {
 	    //constructor
-	    xres = 1024; 
-	    yres = 768;
+	    //xres = 1024; 
+	    //yres = 768;
+	    xres = 0.0;
+	    yres = 0.0;
+
+
 	    aspectRatio = (GLfloat)xres / (GLfloat)yres;
-	    Camera cam;
+	    Player player;
 	    // Masks for byte
 	    // #7 = 0x80 = 1000 0000
 	    // #6 = 0x40 = 0100 0000
@@ -430,8 +375,6 @@ class Global {
 
 	    portals = new Portal[10];
 	    nportals = 0;
-
-
 	}
 } g;
 
@@ -446,6 +389,11 @@ class X11_wrapper {
 	    //Look here for information on XVisualInfo parameters.
 	    //http://www.talisman.org/opengl-1.1/Reference/glXChooseVisual.html
 	    //
+	    // Go to fullscreen
+
+	    g.xres = 0.0;
+	    g.yres = 0.0;
+
 	    GLint att[] = { GLX_RGBA,
 		GLX_STENCIL_SIZE, 2,
 		GLX_DEPTH_SIZE, 24,
@@ -453,11 +401,25 @@ class X11_wrapper {
 	    XSetWindowAttributes swa;
 	    setup_screen_res(g.xres, g.yres);
 	    dpy = XOpenDisplay(NULL);
+
+	    Window root = DefaultRootWindow(dpy);
+
+	    int fullscreen;
+	    if (!g.xres && !g.yres) {
+		XWindowAttributes getWinAttr;
+		XGetWindowAttributes(dpy, root, &getWinAttr);
+		g.xres = getWinAttr.width;
+		g.yres = getWinAttr.height;
+		setup_screen_res(g.xres, g.yres);
+		XGrabKeyboard(dpy, root, False,
+			GrabModeAsync, GrabModeAsync, CurrentTime);
+		fullscreen = 1;
+	    }
+
 	    if (dpy == NULL) {
 		printf("\ncannot connect to X server\n\n");
 		exit(EXIT_FAILURE);
 	    }
-	    Window root = DefaultRootWindow(dpy);
 	    XVisualInfo *vi = glXChooseVisual(dpy, 0, att);
 	    if (vi == NULL) {
 		printf("\nno appropriate visual found\n\n");
@@ -467,17 +429,29 @@ class X11_wrapper {
 	    swa.colormap = cmap;
 	    swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
 		StructureNotifyMask | SubstructureNotifyMask | PointerMotionMask;
+
+	    unsigned int winops = CWBorderPixel|CWColormap|CWEventMask;
+	    if (fullscreen) {
+		winops |= CWOverrideRedirect;
+		swa.override_redirect = True;
+	    }
+	 
 	    win = XCreateWindow(dpy, root, 0, 0, g.xres, g.yres, 0,
 		    vi->depth, InputOutput, vi->visual,
-		    CWColormap | CWEventMask, &swa);
-	    set_title("4490 OpenGL Lab-1");
+		    winops, &swa);
+	    //set_title("4490 OpenGL Lab-1");
 	    glc = glXCreateContext(dpy, vi, NULL, GL_TRUE);
 	    glXMakeCurrent(dpy, win, glc);
+	    set_title();
 	    show_mouse_cursor(0);
 	}
 	~X11_wrapper() {
 	    XDestroyWindow(dpy, win);
 	    XCloseDisplay(dpy);
+	}
+	void set_title() {
+	    //Set the window title bar.
+	    XMapWindow(dpy, win);
 	}
 	void set_title(const char *str) {
 	    //Set the window title bar.
@@ -668,9 +642,9 @@ void init_enemies()
     MakeVector(0.0, 0.0, 0.0, g.fliers[2].vel);
     g.nfliers = 3;
 
-    shootFireball(g.fliers[0].pos[0], g.fliers[0].pos[1], g.fliers[0].pos[2]);
-    shootFireball(g.fliers[1].pos[0], g.fliers[1].pos[1], g.fliers[1].pos[2]);
-    shootFireball(g.fliers[2].pos[0], g.fliers[2].pos[1], g.fliers[2].pos[2]);
+    //shootFireball(g.fliers[0].pos[0], g.fliers[0].pos[1], g.fliers[0].pos[2]);
+    //shootFireball(g.fliers[1].pos[0], g.fliers[1].pos[1], g.fliers[1].pos[2]);
+    //shootFireball(g.fliers[2].pos[0], g.fliers[2].pos[1], g.fliers[2].pos[2]);
 
 }
 
@@ -771,19 +745,19 @@ void check_mouse(XEvent *e)
 	int xdiff = savex - e->xbutton.x;
 	int ydiff = savey - e->xbutton.y;
 	if (xdiff < 0) {
-	    g.cam.lookLeft();
+	    g.player.lookLeft();
 
 	}
 	else if (xdiff > 0) {
-	    g.cam.lookRight();
+	    g.player.lookRight();
 
 	}
 	if (ydiff < 0) {
-	    g.cam.lookUp();
+	    g.player.lookUp();
 
 	}
 	if (ydiff > 0) {
-	    g.cam.lookDown();
+	    g.player.lookDown();
 
 	}
 	savex = g.xres/2;
@@ -1098,7 +1072,7 @@ void drawBrutes()
 	//Setup camera rotation matrix
 	//
 	Vec v;
-	VecSub(g.brutes[i].pos, g.cam.pos, v);
+	VecSub(g.brutes[i].pos, g.player.pos, v);
 	Vec z = {0.0f, 0.0f, 0.0f};
 	make_view_matrix(z, v, g.cameraMatrix);
 	//
@@ -1168,7 +1142,7 @@ void drawFliers()
 	//Setup camera rotation matrix
 	//
 	Vec v;
-	VecSub(g.fliers[i].pos, g.cam.pos, v);
+	VecSub(g.fliers[i].pos, g.player.pos, v);
 	Vec z = {0.0f, 0.0f, 0.0f};
 	make_view_matrix(z, v, g.cameraMatrix);
 	//
@@ -1234,7 +1208,7 @@ void drawFireballs()
 	//Setup camera rotation matrix
 	//
 	Vec v;
-	VecSub(g.fireballs[i].pos, g.cam.pos, v);
+	VecSub(g.fireballs[i].pos, g.player.pos, v);
 	Vec z = {0.0f, 0.0f, 0.0f};
 	make_view_matrix(z, v, g.cameraMatrix);
 	//
@@ -1301,7 +1275,7 @@ void drawPortals()
 	//Setup camera rotation matrix
 	//
 	Vec v;
-	VecSub(g.portals[i].pos, g.cam.pos, v);
+	VecSub(g.portals[i].pos, g.player.pos, v);
 	Vec z = {0.0f, 0.0f, 0.0f};
 	make_view_matrix(z, v, g.cameraMatrix);
 	//
@@ -1351,67 +1325,16 @@ void drawPortals()
     glDisable(GL_ALPHA_TEST);
 }
 
-//	    void make_a_smoke()
-//	    {
-//		if (g.nsmokes < MAX_SMOKES) {
-//		    Smoke *s = &g.smoke[g.nsmokes];
-//		    s->pos[0] = rnd() * 5.0 - 2.5;
-//		    s->pos[2] = rnd() * 5.0 - 2.5;
-//		    s->pos[1] = rnd() * 0.1 + 0.1;
-//		    s->separate = true; 
-//		    s->radius = rnd() * 1.0 + 0.5;
-//		    s->n = rand() % 5 + 5;
-//		    Flt angle = 0.0;
-//		    Flt inc = (PI*2.0) / (Flt)s->n;
-//		    for (int i=0; i<s->n; i++) {
-//			s->vert[i][0] = cos(angle) * s->radius;
-//			s->vert[i][1] = sin(angle) * s->radius;
-//			s->vert[i][2] = 0.0;
-//			angle += inc;
-//		    }
-//		    s->maxtime = 8.0;
-//		    s->alpha = 65.0;
-//		    clock_gettime(CLOCK_REALTIME, &s->tstart);
-//		    ++g.nsmokes;
-//		}
-//	    }
-//
-//	    // Used to make child smokes
-//	    void make_a_smoke(Flt x, Flt y, Flt z, Flt r, Flt m, struct timespec t)
-//	    {
-//		if (g.nsmokes < MAX_SMOKES) {
-//		    Smoke *s = &g.smoke[g.nsmokes];
-//		    s->pos[0] = rnd()* 5.0 + x;
-//		    s->pos[2] = rnd()* 5.0 + z;
-//		    s->pos[1] = y;
-//		    s->separate = false;
-//		    s->radius = r/2;
-//		    s->n = rand() % 5 + 5;
-//		    Flt angle = 0.0;
-//		    Flt inc = (PI*2.0) / (Flt)s->n;
-//		    for (int i=0; i<s->n; i++) {
-//			s->vert[i][0] = cos(angle) * s->radius;
-//			s->vert[i][1] = sin(angle) * s->radius;
-//			s->vert[i][2] = 0.0;
-//			angle += inc;
-//		    }
-//		    s->maxtime = m;
-//		    s->alpha = 65.0;
-//		    s->tstart = t;
-//		    ++g.nsmokes;
-//		}
-//	    }
-
-
 void shootFireball(Flt x, Flt y, Flt z) {
 
-    Flt speed = .125;
+    Flt speed = .15;
+    //Flt speed = .125;
 
     // Camera center - brute center
     Vec v;
-    v[0] = g.cam.pos[0] - x;
-    v[1] = g.cam.pos[1] - y;
-    v[2] = g.cam.pos[2] - z;
+    v[0] = g.player.pos[0] - x;
+    v[1] = g.player.pos[1] - y;
+    v[2] = g.player.pos[2] - z;
 
     // Normalize vector
     Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
@@ -1427,23 +1350,23 @@ void physics()
 {
     // Player movement
     if (g.key_states & g.w_mask) {
-	if (g.cam.pos[2] > -37.4f) {
-	    g.cam.moveForward();
+	if (g.player.pos[2] > -37.4f) {
+	    g.player.moveForward();
 	}
     }
     if (g.key_states & g.a_mask) {
-	if (g.cam.pos[0] > -22.4f) {
-	    g.cam.moveLeft();
+	if (g.player.pos[0] > -22.4f) {
+	    g.player.moveLeft();
 	}
     }
     if (g.key_states & g.s_mask) {
-	if (g.cam.pos[2] < 7.4f) {
-	    g.cam.moveBackward();
+	if (g.player.pos[2] < 7.4f) {
+	    g.player.moveBackward();
 	}
     }
     if (g.key_states & g.d_mask) {
-	if (g.cam.pos[0] < 22.4f) {
-	    g.cam.moveRight();
+	if (g.player.pos[0] < 22.4f) {
+	    g.player.moveRight();
 	}
     }
 
@@ -1461,9 +1384,9 @@ void physics()
 
 	// Camera center - brute center
 	Vec v;
-	v[0] = g.cam.pos[0] - g.brutes[i].pos[0];
-	v[1] = g.cam.pos[1] - g.brutes[i].pos[1];
-	v[2] = g.cam.pos[2] - g.brutes[i].pos[2];
+	v[0] = g.player.pos[0] - g.brutes[i].pos[0];
+	v[1] = g.player.pos[1] - g.brutes[i].pos[1];
+	v[2] = g.player.pos[2] - g.brutes[i].pos[2];
 
 	// Normalize vector
 	Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
@@ -1521,9 +1444,9 @@ void physics()
 
 	// Camera center - fliers center
 	Vec v;
-	v[0] = g.cam.pos[0] - g.fliers[i].pos[0];
-	v[1] = g.cam.pos[1] - g.fliers[i].pos[1];
-	v[2] = g.cam.pos[2] - g.fliers[i].pos[2];
+	v[0] = g.player.pos[0] - g.fliers[i].pos[0];
+	v[1] = g.player.pos[1] - g.fliers[i].pos[1];
+	v[2] = g.player.pos[2] - g.fliers[i].pos[2];
 
 	// Normalize vector
 	Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
@@ -1626,76 +1549,6 @@ void physics()
 	    g.portals[i].timer.recordTime(&g.portals[i].timer.animTime);
 	}
     }
-
-
-    /////// From smoke lab
-    //		clock_gettime(CLOCK_REALTIME, &g.smokeTime);
-    //		double d = timeDiff(&g.smokeStart, &g.smokeTime);
-    //		if (d > 0.05) {
-    //		    //time to make another smoke particle
-    //		    make_a_smoke();
-    //		    timeCopy(&g.smokeStart, &g.smokeTime);
-    //		}
-    //		//move smoke particles
-    //		for (int i=0; i<g.nsmokes; i++) {
-    //		    //smoke rising
-    //		    g.smoke[i].pos[1] += 0.015;
-    //		    g.smoke[i].pos[1] += ((g.smoke[i].pos[1]*0.24) * (rnd() * 0.075));
-    //
-    //		    //expand particle as it rises
-    //		    g.smoke[i].radius += g.smoke[i].pos[1]*0.002;
-    //		    //wind might blow particle
-    //		    if (g.smoke[i].pos[1] > 10.0) {
-    //			g.smoke[i].pos[0] -= rnd() * 0.1;
-    //		    }
-    //		    // break apart
-    //		    if ((g.smoke[i].pos[1] > rnd() * 20 + 20) & g.smoke[i].separate) {
-    //			// Save vars from parent smoke
-    //			Flt x = g.smoke[i].pos[0];
-    //			Flt y = g.smoke[i].pos[1];
-    //			Flt z = g.smoke[i].pos[2];
-    //			Flt r = g.smoke[i].radius;
-    //			Flt m = g.smoke[i].maxtime;
-    //			struct timespec t = g.smoke[i].tstart;
-    //			// Delete parent smoke
-    //			--g.nsmokes;
-    //			g.smoke[i] = g.smoke[g.nsmokes];
-    //			// Generate two new child smokes
-    //			make_a_smoke(x, y, z, r, m, t);
-    //			make_a_smoke(x, y, z, r, m, t);
-    //		    }
-    //		}
-    //		//check for smoke out of time
-    //		int i=0;
-    //		while (i < g.nsmokes) {
-    //		    struct timespec bt;
-    //		    clock_gettime(CLOCK_REALTIME, &bt);
-    //		    double d = timeDiff(&g.smoke[i].tstart, &bt);
-    //		    if (d > g.smoke[i].maxtime - 3.0) {
-    //			g.smoke[i].alpha *= 0.95;
-    //			if (g.smoke[i].alpha < 1.0)
-    //			    g.smoke[i].alpha = 1.0;
-    //		    }
-    //		    if (d > g.smoke[i].maxtime) {
-    //			//delete this smoke
-    //			--g.nsmokes;
-    //			g.smoke[i] = g.smoke[g.nsmokes];
-    //			continue;
-    //		    }
-    //		    ++i;
-    //		}
-    //		//
-    //		if (g.circling) {
-    //		    Flt rad = 80 + sin(g.cameraAngle) * 50.0;
-    //		    Flt x = cos(g.cameraAngle) * rad;
-    //		    Flt z = sin(g.cameraAngle) * rad;
-    //		    Flt y = 25.0;
-    //		    MakeVector(x, y, z, g.cam.pos);
-    //		    g.cameraAngle -= 0.01;
-    //		}
-
-
-
 }
 
 void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
@@ -1776,9 +1629,9 @@ void render()
 
 
     // Camera that can move on x&z and look on x,y,&z
-    gluLookAt(g.cam.pos[0] , 0.0f , g.cam.pos[2],
-	    g.cam.view[0], g.cam.view[1], g.cam.view[2],
-	    g.cam.upv[0],  g.cam.upv[1], g.cam.upv[2]);
+    gluLookAt(g.player.pos[0] , 0.0f , g.player.pos[2],
+	    g.player.view[0], g.player.view[1], g.player.view[2],
+	    g.player.upv[0],  g.player.upv[1], g.player.upv[2]);
 
     glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
     //
@@ -1803,9 +1656,9 @@ void render()
     r.center = 0;
     ggprint8b(&r, 16, 0x00887766, "4490 OpenGL");
     ggprint8b(&r, 16, 0x00887766, "Camera Info:");
-    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.cam.pos[0], g.cam.pos[1], g.cam.pos[2]);
-    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.cam.view[0], g.cam.view[1], g.cam.view[2]);
-    ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.cam.vel[0], g.cam.vel[2]);
+    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
+    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
+    ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.player.vel[0], g.player.vel[2]);
 
     ggprint8b(&r, 16, 0x00887766, "Controls:");
     ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
