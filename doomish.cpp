@@ -62,6 +62,7 @@ class Player {
 	Flt angleH;
 	Flt angleV;
 	Vec upv;
+	Flt lookSpeed;
 	Flt moveSpeed;
 	Flt strafeSpeed;
 
@@ -72,6 +73,8 @@ class Player {
 	    MakeVector(0.0, 1.0, 0.0, upv);
 	    angleH = 0.0f;
 	    angleV = 0.0f;
+	    lookSpeed = 0.015f;
+	    //lookSpeed = 0.0175f;
 	    moveSpeed = .1f;
 	    strafeSpeed = .10f;
 	}
@@ -191,7 +194,7 @@ class Player {
 
 	void lookUp() 
 	{
-	    angleV -= 0.0175f;
+	    angleV -= lookSpeed;
 	    if (angleV < -1.0)
 		angleV = -1.0;
 
@@ -200,7 +203,7 @@ class Player {
 
 	void lookDown() 
 	{
-	    angleV += 0.0175f;
+	    angleV += lookSpeed;
 	    if (angleV > 1.0)
 		angleV = 1.0;
 
@@ -209,14 +212,14 @@ class Player {
 
 	void lookLeft() 
 	{
-	    angleH += 0.0175f;
+	    angleH += lookSpeed;
 	    view[0] = pos[0] + sin(angleH);
 	    view[2] = pos[2] + -cos(angleH);
 	}
 
 	void lookRight() 
 	{
-	    angleH -= 0.0175f;
+	    angleH -= lookSpeed;
 	    view[0] = pos[0] + sin(angleH);
 	    view[2] = pos[2] + -cos(angleH);
 	}
