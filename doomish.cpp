@@ -320,6 +320,7 @@ class Portal {
 class Global {
     public:
 	int xres, yres;
+	int fps;
 	Flt aspectRatio;
 	Player player;
 	Matrix cameraMatrix;
@@ -344,6 +345,7 @@ class Global {
 	    //yres = 768;
 	    xres = 0.0;
 	    yres = 0.0;
+	    fps = 0;
 
 
 	    aspectRatio = (GLfloat)xres / (GLfloat)yres;
@@ -602,11 +604,18 @@ void init_alpha_image(char * imagePath, Ppmimage * image,
 
 int main()
 {
+    // Count number of frames per second
+    // Count number of frames
+    // Print number of frames after a second has passed
     imageConvert();
     init_opengl();
     init_enemies();
     init_portals();
     int done=0;
+    int frameCount=0;
+    double timeSpan;
+    Timers timer;
+    timer.recordTime(&timer.timeStart);
     while (!done) {
 	while (x11.getXPending()) {
 	    XEvent e = x11.getXNextEvent();
@@ -617,7 +626,14 @@ int main()
 	physics();
 	render();
 	x11.swapBuffers();
-	//printf("AngX: %f\n", toDegrees(g.cameraAng[0]));
+	frameCount++;
+	timer.recordTime(&timer.timeCurrent);
+	timeSpan = timer.timeDiff(&timer.timeStart, &timer.timeCurrent);
+	if (timeSpan >= 1.0f) {
+	    g.fps = frameCount;
+	    frameCount = 0;
+	    timer.recordTime(&timer.timeStart);
+	}
     }
     cleanup_fonts();
     imageClean();
@@ -1657,7 +1673,7 @@ void render()
     r.bot = g.yres - 20;
     r.left = 10;
     r.center = 0;
-    ggprint8b(&r, 16, 0x00887766, "4490 OpenGL");
+    ggprint8b(&r, 16, 0x00887766, "FPS: %d", g.fps);
     ggprint8b(&r, 16, 0x00887766, "Camera Info:");
     ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
     ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
