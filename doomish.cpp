@@ -334,6 +334,7 @@ class Global {
 	int xres, yres;
 	int fps;
 	int vsync;
+	int shotReset;
 	Flt aspectRatio;
 	Player player;
 	Matrix cameraMatrix;
@@ -353,6 +354,7 @@ class Global {
 	int nportals;
 
 	Global() {
+	    shotReset = 30;
 	    //constructor
 	    //xres = 1024; 
 	    //yres = 768;
@@ -448,7 +450,7 @@ class X11_wrapper {
 	    Colormap cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
 	    swa.colormap = cmap;
 	    swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-		StructureNotifyMask | SubstructureNotifyMask | PointerMotionMask;
+		StructureNotifyMask | SubstructureNotifyMask | PointerMotionMask | ButtonPressMask;
 
 	    unsigned int winops = CWBorderPixel|CWColormap|CWEventMask;
 	    if (fullscreen) {
@@ -784,6 +786,12 @@ void check_mouse(XEvent *e)
 {
     //Did the mouse move?
     //Was a mouse button clicked?
+
+    if (e->type == ButtonPress) {
+	if (e->xbutton.button==1) {
+	    g.shotReset = 30;
+	}
+    }
 
     static int savex = 0;
     static int savey = 0;
@@ -1377,10 +1385,18 @@ void drawGun() {
 	//glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-2*(g.xres/7), g.yres/2+(g.yres/7)); 
 	//glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/2+(g.yres/7));
 	//glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/2-5*(g.yres/8));
-	glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), 0);
-	glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), g.yres/1.7); 
-	glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/1.7);
-	glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2+(g.xres/7),   0);
+	if (g.shotReset == 0) {
+	    glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), 0);
+	    glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), g.yres/1.7); 
+	    glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/1.7);
+	    glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2+(g.xres/7),   0);
+	} else {
+	    glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), 0);
+	    glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), g.yres/1.7); 
+	    glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/1.7);
+	    glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+(g.xres/7),   0);
+	    g.shotReset -= 1;
+	}
 
 
 
