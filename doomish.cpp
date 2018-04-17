@@ -354,7 +354,7 @@ class Global {
 	int nportals;
 
 	Global() {
-	    shotReset = 30;
+	    shotReset = 0;
 	    //constructor
 	    //xres = 1024; 
 	    //yres = 768;
