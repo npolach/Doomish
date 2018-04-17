@@ -1485,7 +1485,7 @@ void physics()
 	g.fireballs[i].pos[1] += g.fireballs[i].dir[1];
 	g.fireballs[i].pos[2] += g.fireballs[i].dir[2];
 
-	// collision
+	// collision with walls
 	if (g.fireballs[i].pos[0] < -22.4f || //
 	    g.fireballs[i].pos[0] > 22.4f  || //
 	    g.fireballs[i].pos[1] < 0	   || // floor
@@ -1512,6 +1512,42 @@ void physics()
 	    }
 	}
 
+	// collision with player
+	if (g.fireballs[i].pos[0] < g.player.pos[0] + 2.5 && // right of player
+	    g.fireballs[i].pos[0] > g.player.pos[0] - 2.5 && // left of player
+	    g.fireballs[i].pos[2] < g.player.pos[1] + 5 && // top of player
+	    g.fireballs[i].pos[2] > g.player.pos[1] - 5 && // bottom of player
+	    g.fireballs[i].pos[2] < g.player.pos[2] + 5 && // front of player
+	    g.fireballs[i].pos[2] > g.player.pos[2] - 5)   // back of player
+	{
+	    g.player.health -= 5;
+
+	    //// Disable vsync
+	    //static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = NULL;
+	    //glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+	    //GLXDrawable drawable = glXGetCurrentDrawable();
+	    //glXSwapIntervalEXT(x11.dpy, drawable, 0);
+
+
+	    // Copy last fireball to current possition and decrement nfireballs
+	    if (g.nfireballs > 1) {
+		g.fireballs[i].pos[0] = g.fireballs[g.nfireballs-1].pos[0];
+		g.fireballs[i].pos[1] = g.fireballs[g.nfireballs-1].pos[1];
+		g.fireballs[i].pos[2] = g.fireballs[g.nfireballs-1].pos[2];
+		g.fireballs[i].dir[0] = g.fireballs[g.nfireballs-1].dir[0];
+		g.fireballs[i].dir[1] = g.fireballs[g.nfireballs-1].dir[1];
+		g.fireballs[i].dir[2] = g.fireballs[g.nfireballs-1].dir[2];
+	    }
+	    --g.nfireballs;
+
+	    // Move change current fireball if there are still fireballs
+	    if (g.nfireballs > 0) {
+		g.fireballs[i].pos[0] += g.fireballs[i].dir[0];
+		g.fireballs[i].pos[1] += g.fireballs[i].dir[1];
+		g.fireballs[i].pos[2] += g.fireballs[i].dir[2];
+	    }
+	}
+	
 	if (g.nfireballs > 0) {
 
 	    // Sprite Animation
@@ -1539,8 +1575,6 @@ void physics()
 	    g.portals[i].timer.recordTime(&g.portals[i].timer.animTime);
 	}
     }
-
-    // Collision physics
 }
 
 void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
