@@ -11,6 +11,7 @@
 #include <X11/keysym.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
+#include <GL/glxext.h>
 #include <GL/glu.h>
 #include "fonts.h"
 #include <iostream>
@@ -58,6 +59,8 @@ class Player {
     public:
 	Vec pos;
 	Vec vel;
+	Flt health;
+
 	Vec view;
 	Flt angleH;
 	Flt angleV;
@@ -71,6 +74,7 @@ class Player {
 	    MakeVector(0.0, 0.0, 0.0, view);
 	    MakeVector(0.0, 0.0, 0.0, vel);
 	    MakeVector(0.0, 1.0, 0.0, upv);
+	    health = 100.0;
 	    angleH = 0.0f;
 	    angleV = 0.0f;
 	    lookSpeed = 0.015f;
@@ -223,8 +227,6 @@ class Player {
 	    view[0] = pos[0] + sin(angleH);
 	    view[2] = pos[2] + -cos(angleH);
 	}
-
-
 };
 
 //Setup timers
@@ -235,7 +237,7 @@ class Timers {
 	struct timespec timeStart, timeEnd, timeCurrent;
 	struct timespec animTime; // Animation time
 	Timers() {
-	    physicsRate = 1.0 / 30.0;
+	    physicsRate = 1.0 / 60.0;
 	    oobillion = 1.0 / 1e9;
 	    recordTime(&animTime);
 	}
@@ -386,10 +388,11 @@ class Global {
 //X Windows wrapper class
 class X11_wrapper {
     private:
-	Display *dpy;
+	//Display *dpy;
 	Window win;
 	GLXContext glc;
     public:
+	Display *dpy;
 	X11_wrapper() {
 	    //Look here for information on XVisualInfo parameters.
 	    //http://www.talisman.org/opengl-1.1/Reference/glXChooseVisual.html
@@ -592,30 +595,20 @@ unsigned char *buildAlphaData(Ppmimage *img);
 void init_alpha_image(char * imagePath, Ppmimage * image,
 	GLuint * texture, GLuint * silhouette);
 
-//Flt distance(Smoke s) {
-//
-//    Flt dist = ((s.pos[0] - g.cam.pos[0])*(s.pos[0] - g.cam.pos[0])) +
-//	((s.pos[1] - g.cam.pos[1])*(s.pos[1] - g.cam.pos[1])) +
-//	((s.pos[2] - g.cam.pos[2])*(s.pos[2] - g.cam.pos[2]));
-//
-//
-//    return dist;
-//}
-
 int main()
 {
-    // Count number of frames per second
-    // Count number of frames
-    // Print number of frames after a second has passed
     imageConvert();
     init_opengl();
     init_enemies();
     init_portals();
     int done=0;
     int frameCount=0;
+    double physicsCountdown=0.0;
     double timeSpan;
-    Timers timer;
-    timer.recordTime(&timer.timeStart);
+    Timers frameTimer;
+    Timers physicsTimer;
+    frameTimer.recordTime(&frameTimer.timeStart);
+    physicsTimer.recordTime(&physicsTimer.timeStart);
     while (!done) {
 	while (x11.getXPending()) {
 	    XEvent e = x11.getXNextEvent();
@@ -623,16 +616,28 @@ int main()
 	    check_mouse(&e);
 	    done = check_keys(&e);
 	}
-	physics();
+
+	// Physics Timers
+	physicsTimer.recordTime(&physicsTimer.timeCurrent);
+	timeSpan = physicsTimer.timeDiff(&physicsTimer.timeStart, &physicsTimer.timeCurrent);
+	physicsTimer.timeCopy(&physicsTimer.timeStart, &physicsTimer.timeCurrent);
+	physicsCountdown += timeSpan;
+	while(physicsCountdown >= physicsTimer.physicsRate) {
+	    physics();
+	    physicsCountdown -= physicsTimer.physicsRate;
+	}
+
 	render();
 	x11.swapBuffers();
+
+	// FPS Counter
 	frameCount++;
-	timer.recordTime(&timer.timeCurrent);
-	timeSpan = timer.timeDiff(&timer.timeStart, &timer.timeCurrent);
+	frameTimer.recordTime(&frameTimer.timeCurrent);
+	timeSpan = frameTimer.timeDiff(&frameTimer.timeStart, &frameTimer.timeCurrent);
 	if (timeSpan >= 1.0f) {
 	    g.fps = frameCount;
 	    frameCount = 0;
-	    timer.recordTime(&timer.timeStart);
+	    frameTimer.recordTime(&frameTimer.timeStart);
 	}
     }
     cleanup_fonts();
@@ -660,11 +665,6 @@ void init_enemies()
     MakeVector(0.0, 0.0, 0.0, g.fliers[1].vel);
     MakeVector(0.0, 0.0, 0.0, g.fliers[2].vel);
     g.nfliers = 3;
-
-    //shootFireball(g.fliers[0].pos[0], g.fliers[0].pos[1], g.fliers[0].pos[2]);
-    //shootFireball(g.fliers[1].pos[0], g.fliers[1].pos[1], g.fliers[1].pos[2]);
-    //shootFireball(g.fliers[2].pos[0], g.fliers[2].pos[1], g.fliers[2].pos[2]);
-
 }
 
 void init_portals()
@@ -674,13 +674,6 @@ void init_portals()
     MakeVector(-12.5, 0.0, -2.5, g.portals[2].pos);
     MakeVector(-12.5, 0.0, -27.5, g.portals[3].pos);
     g.nportals = 4;
-
-    //    //Add positioned light
-    //    GLfloat lightColor1[] = {0.75f, 0.0f, 0.0f, 1.0f};
-    //    GLfloat lightPos1[] = {g.portals[0].pos[0], g.portals[0].pos[1], g.portals[0].pos[2], 0.0f};
-    //    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor1);
-    //    glLightfv(GL_LIGHT0, GL_POSITION, lightPos1);
-    //    glEnable(GL_LIGHT0);
 }
 
 
@@ -750,6 +743,12 @@ void init_opengl()
 	printf("Exiting program.\n");
 	exit(0);
     }
+
+    // Disable vsync
+    static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = NULL;
+    glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+    GLXDrawable drawable = glXGetCurrentDrawable();
+    glXSwapIntervalEXT(x11.dpy, drawable, 0);
 }
 
 void check_mouse(XEvent *e)
@@ -840,25 +839,6 @@ int check_keys(XEvent *e)
     }
     return 0;
 }
-
-//    void vecNormalize(Vec v)
-//    {
-//	Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-//	if (len == 0.0)
-//	    return;
-//	len = 1.0 / sqrt(len);
-//	v[0] *= len;
-//	v[1] *= len;
-//	v[2] *= len;
-//    }
-//
-//    void vecScale(Vec v, Flt s)
-//    {
-//	v[0] *= s;
-//	v[1] *= s;
-//	v[2] *= s;
-//    }
-
 
 void drawFloor()
 {
@@ -1437,9 +1417,6 @@ void physics()
 	    g.brutes[i].pos[2] = 7.0f;
 	    g.brutes[i].vel[2] = 0;
 	}
-
-
-
     }
 
     for (int i = 0; i < g.nfliers; i++) {
@@ -1459,7 +1436,6 @@ void physics()
 		g.fliers[i].spriteFrame = 0;
 	    g.fliers[i].timer.recordTime(&g.fliers[i].timer.animTime);
 	}
-
 
 	// Camera center - fliers center
 	Vec v;
@@ -1500,8 +1476,6 @@ void physics()
 	    g.fliers[i].pos[2] = 7.0f;
 	    g.fliers[i].vel[2] = 0;
 	}
-
-	//shootFireball(g.fliers[i].pos[0], g.fliers[i].pos[1], g.fliers[i].pos[2]);
     }
 
     for (int i = 0; i < g.nfireballs; i++) {
@@ -1538,7 +1512,6 @@ void physics()
 	    }
 	}
 
-
 	if (g.nfireballs > 0) {
 
 	    // Sprite Animation
@@ -1554,8 +1527,6 @@ void physics()
 
     }
 
-
-
     for (int i = 0; i < g.nportals; i++) {
 
 	// Sprite Animation
@@ -1568,6 +1539,8 @@ void physics()
 	    g.portals[i].timer.recordTime(&g.portals[i].timer.animTime);
 	}
     }
+
+    // Collision physics
 }
 
 void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
@@ -1674,6 +1647,7 @@ void render()
     r.left = 10;
     r.center = 0;
     ggprint8b(&r, 16, 0x00887766, "FPS: %d", g.fps);
+    ggprint8b(&r, 16, 0x00887766, "Health: %f", g.player.health);
     ggprint8b(&r, 16, 0x00887766, "Camera Info:");
     ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
     ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
@@ -1686,6 +1660,3 @@ void render()
     ggprint8b(&r, 16, 0x00887766, "    e/q: Strafe Left/Right");
     ggprint8b(&r, 16, 0x00887766, "    c/z: Strafe Up/Down");
 }
-
-
-
