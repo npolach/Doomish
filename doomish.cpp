@@ -49,6 +49,14 @@ Ppmimage * fireballImage;
 GLuint fireballTexture;
 GLuint fireballSilhouette;
 
+Ppmimage * gunImage;
+GLuint gunTexture;
+GLuint gunSilhouette;
+
+Ppmimage * crosshairImage;
+GLuint crosshairTexture;
+GLuint crosshairSilhouette;
+
 Ppmimage * floor1Image=NULL;
 GLuint floor1Texture;
 
@@ -260,11 +268,13 @@ class Brute {
 	Timers timer;
 	int FRAMECOUNT;
 	int spriteFrame;
+	struct timespec lastHit;
 	double delay;
 	Brute() {
 	    spriteFrame = 0;
 	    delay = 0.35;
 	    FRAMECOUNT = 2;
+	    timer.recordTime(&lastHit);
 	}
 };
 
@@ -323,6 +333,7 @@ class Global {
     public:
 	int xres, yres;
 	int fps;
+	int vsync;
 	Flt aspectRatio;
 	Player player;
 	Matrix cameraMatrix;
@@ -348,6 +359,7 @@ class Global {
 	    xres = 0.0;
 	    yres = 0.0;
 	    fps = 0;
+	    vsync = 1;
 
 
 	    aspectRatio = (GLfloat)xres / (GLfloat)yres;
@@ -546,6 +558,8 @@ void imageConvert()
     remove("./images/portalsheet.ppm");
     remove("./images/fireballsheet.ppm");
     remove("./images/fireballsheet2.ppm");
+    remove("./images/gunsheet.ppm");
+    remove("./images/crosshairsheet.ppm");
 
 
     //
@@ -562,6 +576,8 @@ void imageConvert()
     system("mogrify -format ppm ./images/portalsheet.jpg");
     system("mogrify -format ppm ./images/fireballsheet.jpg");
     system("mogrify -format ppm ./images/fireballsheet2.jpg");
+    system("mogrify -format ppm ./images/gunsheet.jpg");
+    system("mogrify -format ppm ./images/crosshairsheet.jpg");
 }
 
 void imageClean()
@@ -579,6 +595,8 @@ void imageClean()
     remove("./images/portalsheet.ppm");
     remove("./images/fireballsheet.ppm");
     remove("./images/fireballsheet2.ppm");
+    remove("./images/gunsheet.ppm");
+    remove("./images/crosshairsheet.ppm");
 }
 
 void init_opengl();
@@ -712,6 +730,16 @@ void init_opengl()
     init_alpha_image((char *)"./images/fireballsheet2.ppm",
 	    fireballImage, &fireballTexture, &fireballSilhouette);
 
+    // Initialize flier image
+    // 79x100
+    init_alpha_image((char *)"./images/gunsheet.ppm",
+	    gunImage, &gunTexture, &gunSilhouette);
+
+    // Initialize flier image
+    // 79x100
+    init_alpha_image((char *)"./images/crosshairsheet.ppm",
+	    crosshairImage, &crosshairTexture, &crosshairSilhouette);
+
     // Initialize portal image
     init_alpha_image((char *)"./images/portalsheet.ppm",
 	    portalImage, &portalTexture, &portalSilhouette);
@@ -744,11 +772,12 @@ void init_opengl()
 	exit(0);
     }
 
+    // https://github.com/godotengine/godot/blob/master/platform/x11/context_gl_x11.cpp
     // Disable vsync
-    static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = NULL;
-    glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
-    GLXDrawable drawable = glXGetCurrentDrawable();
-    glXSwapIntervalEXT(x11.dpy, drawable, 0);
+    //static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = NULL;
+    //glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+    //GLXDrawable drawable = glXGetCurrentDrawable();
+    //glXSwapIntervalEXT(x11.dpy, drawable, 0);
 }
 
 void check_mouse(XEvent *e)
@@ -786,6 +815,7 @@ void check_mouse(XEvent *e)
 
 int check_keys(XEvent *e)
 {
+    GLXDrawable drawable = glXGetCurrentDrawable();
     //static int shift = false;
     //Was there input from the keyboard?
     if (e->type != KeyPress && e->type != KeyRelease)
@@ -832,7 +862,17 @@ int check_keys(XEvent *e)
 	    case XK_d:
 		g.key_states = g.key_states|g.d_mask;
 		break;
-
+	    case XK_v:
+		g.vsync ^= 1;
+		// https://github.com/godotengine/godot/blob/master/platform/x11/context_gl_x11.cpp
+		// Disable vsync
+		static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = NULL;
+		glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+		if (g.vsync) 
+		    glXSwapIntervalEXT(x11.dpy, drawable, 1);
+		else
+		    glXSwapIntervalEXT(x11.dpy, drawable, 0);
+		break;
 	    case XK_Escape:
 		return 1;
 	}
@@ -1324,6 +1364,50 @@ void drawPortals()
     glDisable(GL_ALPHA_TEST);
 }
 
+void drawGun() {
+
+	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+	glPushMatrix();
+	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, gunSilhouette);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+	glBegin(GL_QUADS);
+	//glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-2*(g.xres/7), g.yres/2-5*(g.yres/8));
+	//glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-2*(g.xres/7), g.yres/2+(g.yres/7)); 
+	//glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/2+(g.yres/7));
+	//glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/2-5*(g.yres/8));
+	glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), 0);
+	glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), g.yres/1.7); 
+	glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/1.7);
+	glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2+(g.xres/7),   0);
+
+
+
+	glEnd();
+	glPopMatrix();
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_ALPHA_TEST);
+
+	glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+	glPushMatrix();
+	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, crosshairSilhouette);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-50, g.yres/2);
+	glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-50, g.yres/2+100); 
+	glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+50, g.yres/2+100);
+	glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+50, g.yres/2);
+
+	glEnd();
+	glPopMatrix();
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_ALPHA_TEST);
+
+}
+
 void shootFireball(Flt x, Flt y, Flt z) {
 
     Flt speed = .15;
@@ -1417,6 +1501,21 @@ void physics()
 	    g.brutes[i].pos[2] = 7.0f;
 	    g.brutes[i].vel[2] = 0;
 	}
+
+	if (g.brutes[i].pos[0] < g.player.pos[0] + 2 && // right of player
+	    g.brutes[i].pos[0] > g.player.pos[0] - 2 && // left of player
+	    g.brutes[i].pos[2] < g.player.pos[2] + 2 && // front of player
+	    g.brutes[i].pos[2] > g.player.pos[2] - 2)   // back of player
+	{
+	    g.brutes[i].timer.recordTime(&g.brutes[i].timer.timeCurrent);
+	    double timeSpan = g.brutes[i].timer.timeDiff(&g.brutes[i].lastHit, &g.brutes[i].timer.timeCurrent);
+		if (timeSpan > 0.5f) {
+		    g.brutes[i].timer.timeCopy(&g.brutes[i].lastHit, &g.brutes[i].timer.timeCurrent);
+		    g.player.health -= 5;
+		}
+	}
+
+
     }
 
     for (int i = 0; i < g.nfliers; i++) {
@@ -1513,21 +1612,14 @@ void physics()
 	}
 
 	// collision with player
-	if (g.fireballs[i].pos[0] < g.player.pos[0] + 2.5 && // right of player
-	    g.fireballs[i].pos[0] > g.player.pos[0] - 2.5 && // left of player
-	    g.fireballs[i].pos[2] < g.player.pos[1] + 5 && // top of player
-	    g.fireballs[i].pos[2] > g.player.pos[1] - 5 && // bottom of player
-	    g.fireballs[i].pos[2] < g.player.pos[2] + 5 && // front of player
-	    g.fireballs[i].pos[2] > g.player.pos[2] - 5)   // back of player
+	if (g.fireballs[i].pos[0] < g.player.pos[0] + 1 && // right of player
+	    g.fireballs[i].pos[0] > g.player.pos[0] - 1 && // left of player
+	    g.fireballs[i].pos[1] < g.player.pos[1] + 3 && // top of player
+	    g.fireballs[i].pos[1] > g.player.pos[1] - 3 && // bottom of player
+	    g.fireballs[i].pos[2] < g.player.pos[2] + 1 && // front of player
+	    g.fireballs[i].pos[2] > g.player.pos[2] - 1)   // back of player
 	{
-	    g.player.health -= 5;
-
-	    //// Disable vsync
-	    //static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = NULL;
-	    //glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
-	    //GLXDrawable drawable = glXGetCurrentDrawable();
-	    //glXSwapIntervalEXT(x11.dpy, drawable, 0);
-
+	    g.player.health -= 10;
 
 	    // Copy last fireball to current possition and decrement nfireballs
 	    if (g.nfireballs > 1) {
@@ -1677,6 +1769,7 @@ void render()
     glMatrixMode (GL_PROJECTION); glLoadIdentity();
     gluOrtho2D(0, g.xres, 0, g.yres);
     glDisable(GL_LIGHTING);
+    drawGun();
     r.bot = g.yres - 20;
     r.left = 10;
     r.center = 0;
