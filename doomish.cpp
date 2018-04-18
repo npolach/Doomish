@@ -85,7 +85,8 @@ class Player {
 	    health = 100.0;
 	    angleH = 0.0f;
 	    angleV = 0.0f;
-	    lookSpeed = 0.015f;
+	    lookSpeed = 0.0080f;
+	    //lookSpeed = 0.015f;
 	    //lookSpeed = 0.0175f;
 	    moveSpeed = .1f;
 	    strafeSpeed = .10f;
@@ -279,6 +280,7 @@ class Brute {
 };
 
 void shootFireball(Flt, Flt, Flt);
+void shootBullet();
 
 class Flier {
     public:
@@ -315,6 +317,23 @@ class Fireball {
 
 };
 
+class Bullet {
+    public:
+	Vec pos;
+	Vec dir; // direction
+	Timers timer;
+	int FRAMECOUNT;
+	int spriteFrame;
+	double delay;
+	Bullet() {
+	    spriteFrame = 0;
+	    delay = 0.125;
+	    FRAMECOUNT = 5;
+	}
+
+};
+
+
 class Portal {
     public:
 	Vec pos;
@@ -350,6 +369,9 @@ class Global {
 	int nfliers;
 	Fireball * fireballs;
 	int nfireballs;
+	Bullet * bullets;
+	int nbullets;
+
 	Portal * portals;
 	int nportals;
 
@@ -393,6 +415,9 @@ class Global {
 	    nfliers = 0;
 	    fireballs = new Fireball[100];
 	    nfireballs = 0;
+	    bullets = new Bullet[100];
+	    nbullets = 0;
+
 
 	    portals = new Portal[10];
 	    nportals = 0;
@@ -790,6 +815,7 @@ void check_mouse(XEvent *e)
     if (e->type == ButtonPress) {
 	if (e->xbutton.button==1) {
 	    g.shotReset = 30;
+	    shootBullet();
 	}
     }
 
@@ -1301,6 +1327,72 @@ void drawFireballs()
     glDisable(GL_ALPHA_TEST);
 }
 
+void drawBullets()
+{
+    Flt w = 0.15;
+    Flt d = 0.15;
+    Flt h = 0.0;
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    for (int i = 0; i < g.nbullets; i++) {
+
+	glPushMatrix();
+	glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, fireballSilhouette);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+
+	glTranslated(g.bullets[i].pos[0], g.bullets[i].pos[1]-.5, g.bullets[i].pos[2]);
+	///// Billboarding
+	//Setup camera rotation matrix
+	//
+	Vec v;
+	VecSub(g.bullets[i].pos, g.player.pos, v);
+	Vec z = {0.0f, 0.0f, 0.0f};
+	make_view_matrix(z, v, g.cameraMatrix);
+	//
+	//Billboard_to_camera();
+	//
+	float mat[16];
+	mat[ 0] = g.cameraMatrix[0][0];
+	mat[ 1] = g.cameraMatrix[0][1];
+	mat[ 2] = g.cameraMatrix[0][2];
+	mat[ 4] = g.cameraMatrix[1][0];
+	mat[ 5] = g.cameraMatrix[1][1];
+	mat[ 6] = g.cameraMatrix[1][2];
+	mat[ 8] = g.cameraMatrix[2][0];
+	mat[ 9] = g.cameraMatrix[2][1];
+	mat[10] = g.cameraMatrix[2][2];
+	mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	mat[15] = 1.0f;
+	glMultMatrixf(mat);
+	//
+	///// End Billboarding
+
+	float tx = g.bullets[i].spriteFrame * .20;
+
+	glRotatef(90, 1, 0, 0);
+	glBegin(GL_QUADS);
+
+	glTexCoord2f(tx, 0.0f);
+	glVertex3f( w, h,-d);
+
+	glTexCoord2f(tx+.20, 0.0f);
+	glVertex3f(-w, h,-d);
+
+	glTexCoord2f(tx+.20, 1.0f);
+	glVertex3f(-w, h, d);
+
+	glTexCoord2f(tx, 1.0f);
+	glVertex3f( w, h, d);
+
+	glEnd();
+	glPopMatrix();
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_ALPHA_TEST);
+}
+
 
 void drawPortals()
 {
@@ -1443,6 +1535,27 @@ void shootFireball(Flt x, Flt y, Flt z) {
     MakeVector(norm[0]*speed, norm[1]*speed, norm[2]*speed, g.fireballs[g.nfireballs].dir);
     g.nfireballs++;
 }
+
+void shootBullet() {
+
+    Flt speed = .05;
+    //Flt speed = .125;
+
+    // Camera center - brute center
+    Vec v;
+    v[0] = g.player.view[0];
+    v[1] = g.player.view[1];
+    v[2] = g.player.view[2];
+
+    // Normalize vector
+    Flt len = 2;
+    Vec norm = {v[0]/len, v[1]/len, v[2]/len};
+
+    MakeVector(g.player.pos[0], g.player.pos[1], g.player.pos[2], g.bullets[g.nbullets].pos);
+    MakeVector(norm[0]*speed, norm[1]*speed, norm[2]*speed, g.bullets[g.nbullets].dir);
+    g.nbullets++;
+}
+
 
 
 void physics()
@@ -1671,6 +1784,85 @@ void physics()
 
     }
 
+    for (int i = 0; i < g.nbullets; i++) {
+
+	// Constant direction
+	g.bullets[i].pos[0] += g.bullets[i].dir[0];
+	g.bullets[i].pos[1] += g.bullets[i].dir[1];
+	g.bullets[i].pos[2] += g.bullets[i].dir[2];
+
+	// collision with walls
+	if (g.bullets[i].pos[0] < -22.4f || //
+	    g.bullets[i].pos[0] > 22.4f  || //
+	    g.bullets[i].pos[1] < 0	   || // floor
+	    g.bullets[i].pos[2] < -37.4f || //
+	    g.bullets[i].pos[2] > 7.4f)     //
+	{
+
+	    // Copy last fireball to current possition and decrement nbullets
+	    if (g.nbullets > 1) {
+		g.bullets[i].pos[0] = g.bullets[g.nbullets-1].pos[0];
+		g.bullets[i].pos[1] = g.bullets[g.nbullets-1].pos[1];
+		g.bullets[i].pos[2] = g.bullets[g.nbullets-1].pos[2];
+		g.bullets[i].dir[0] = g.bullets[g.nbullets-1].dir[0];
+		g.bullets[i].dir[1] = g.bullets[g.nbullets-1].dir[1];
+		g.bullets[i].dir[2] = g.bullets[g.nbullets-1].dir[2];
+	    }
+	    --g.nbullets;
+
+	    // Move change current fireball if there are still bullets
+	    if (g.nbullets > 0) {
+		g.bullets[i].pos[0] += g.bullets[i].dir[0];
+		g.bullets[i].pos[1] += g.bullets[i].dir[1];
+		g.bullets[i].pos[2] += g.bullets[i].dir[2];
+	    }
+	}
+
+	// collision with player
+	if (g.bullets[i].pos[0] < g.player.pos[0] + 1 && // right of player
+	    g.bullets[i].pos[0] > g.player.pos[0] - 1 && // left of player
+	    g.bullets[i].pos[1] < g.player.pos[1] + 3 && // top of player
+	    g.bullets[i].pos[1] > g.player.pos[1] - 3 && // bottom of player
+	    g.bullets[i].pos[2] < g.player.pos[2] + 1 && // front of player
+	    g.bullets[i].pos[2] > g.player.pos[2] - 1)   // back of player
+	{
+	    g.player.health -= 10;
+
+	    // Copy last fireball to current possition and decrement nbullets
+	    if (g.nbullets > 1) {
+		g.bullets[i].pos[0] = g.bullets[g.nbullets-1].pos[0];
+		g.bullets[i].pos[1] = g.bullets[g.nbullets-1].pos[1];
+		g.bullets[i].pos[2] = g.bullets[g.nbullets-1].pos[2];
+		g.bullets[i].dir[0] = g.bullets[g.nbullets-1].dir[0];
+		g.bullets[i].dir[1] = g.bullets[g.nbullets-1].dir[1];
+		g.bullets[i].dir[2] = g.bullets[g.nbullets-1].dir[2];
+	    }
+	    --g.nbullets;
+
+	    // Move change current fireball if there are still bullets
+	    if (g.nbullets > 0) {
+		g.bullets[i].pos[0] += g.bullets[i].dir[0];
+		g.bullets[i].pos[1] += g.bullets[i].dir[1];
+		g.bullets[i].pos[2] += g.bullets[i].dir[2];
+	    }
+	}
+	
+	if (g.nbullets > 0) {
+
+	    // Sprite Animation
+	    g.bullets[i].timer.recordTime(&g.bullets[i].timer.timeCurrent);
+	    double timeSpan = g.bullets[i].timer.timeDiff(&g.bullets[i].timer.animTime, &g.bullets[i].timer.timeCurrent);
+	    if (timeSpan > g.bullets[i].delay) {
+		++g.bullets[i].spriteFrame;
+		if(g.bullets[i].spriteFrame >= g.bullets[i].FRAMECOUNT)
+		    g.bullets[i].spriteFrame = 0;
+		g.bullets[i].timer.recordTime(&g.bullets[i].timer.animTime);
+	    }
+	}
+
+    }
+
+
     for (int i = 0; i < g.nportals; i++) {
 
 	// Sprite Animation
@@ -1775,6 +1967,7 @@ void render()
     drawBrutes();
     drawFliers();
     drawFireballs();
+    drawBullets();
     //
     //
     //switch to 2D mode
