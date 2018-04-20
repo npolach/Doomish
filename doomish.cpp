@@ -1477,50 +1477,63 @@ void drawGun() {
     glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
     glPushMatrix();
     glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-    glBindTexture(GL_TEXTURE_2D, gunSilhouette);
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
-    glBegin(GL_QUADS);
-    //glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-2*(g.xres/7), g.yres/2-5*(g.yres/8));
-    //glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-2*(g.xres/7), g.yres/2+(g.yres/7)); 
-    //glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/2+(g.yres/7));
-    //glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/2-5*(g.yres/8));
-    if (g.shotReset == 0) {
-	glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), 0);
-	glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), g.yres/1.7); 
-	glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/1.7);
-	glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2+(g.xres/7),   0);
-    } else {
-	glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), 0);
-	glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2-2.35*(g.xres/7), g.yres/1.7); 
-	glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+(g.xres/7),   g.yres/1.7);
-	glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+(g.xres/7),   0);
-	g.shotReset -= 1;
-    }
-
-
-
-    glEnd();
-    glPopMatrix();
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glDisable(GL_ALPHA_TEST);
-
-    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-    glPushMatrix();
-    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
     glBindTexture(GL_TEXTURE_2D, crosshairSilhouette);
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0f); //Alpha
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-50, g.yres/2);
-    glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-50, g.yres/2+100); 
-    glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+50, g.yres/2+100);
-    glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+50, g.yres/2);
-
+    glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-50, (g.yres/2));
+    glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-50, (g.yres/2+100)); 
+    glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+50, (g.yres/2+100));
+    glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+50, (g.yres/2));
+    //TODO Move crosshair lower
+    //
     glEnd();
     glPopMatrix();
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_ALPHA_TEST);
+
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glPushMatrix();
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, gunSilhouette);
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+    glBegin(GL_QUADS);
+    if (g.shotReset == 0) {
+	glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-2.35*(g.xres/9), 0);
+	glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-2.35*(g.xres/9), g.yres/2.0); 
+	glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2+(g.xres/9),   g.yres/2.0);
+	glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2+(g.xres/9),   0);
+    } else {
+	glTexCoord2f(0.5f, 1.0f); glVertex2i(g.xres/2-2.35*(g.xres/9), 0);
+	glTexCoord2f(0.5f, 0.0f); glVertex2i(g.xres/2-2.35*(g.xres/9), g.yres/2.0); 
+	glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+(g.xres/9),   g.yres/2.0);
+	glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+(g.xres/9),   0);
+	g.shotReset -= 1;
+    }
+
+//    glEnd();
+//    glPopMatrix();
+//    glBindTexture(GL_TEXTURE_2D, 0);
+//    glDisable(GL_ALPHA_TEST);
+//
+//    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+//    glPushMatrix();
+//    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+//    glBindTexture(GL_TEXTURE_2D, crosshairSilhouette);
+//    glEnable(GL_ALPHA_TEST);
+//    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+//    glBegin(GL_QUADS);
+//    glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-50, 100-(g.yres/2));
+//    glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-50, 100-(g.yres/2+100)); 
+//    glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+50, 100-(g.yres/2+100));
+//    glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+50, 100-(g.yres/2));
+//
+//    glEnd();
+//    glPopMatrix();
+//    glBindTexture(GL_TEXTURE_2D, 0);
+//    glDisable(GL_ALPHA_TEST);
 
 }
 
