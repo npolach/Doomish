@@ -647,8 +647,33 @@ unsigned char *buildAlphaData(Ppmimage *img);
 void init_alpha_image(char * imagePath, Ppmimage * image,
 	GLuint * texture, GLuint * silhouette);
 
+void vecNormalize(Vec v)
+{
+    Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+    if (len == 0.0)
+	return;
+    len = 1.0 / sqrt(len);
+    v[0] *= len;
+    v[1] *= len;
+    v[2] *= len;
+}
+
+
+void unitTest () {
+
+    Vec test1Vec;
+    MakeVector(3.0, 1.0, 2.0, test1Vec);
+    vecNormalize(test1Vec);
+    printf("Expected:\n\tX: 0.802000, Y: 0.267000, Z: 0.535000\n");
+    printf("Got:\n\tX: %f, Y: %f, Z: %f\n\n",  round( test1Vec[0] * 1000.0 ) / 1000.0,
+	                                       round( test1Vec[1] * 1000.0 ) / 1000.0,
+	                                       round( test1Vec[2] * 1000.0 ) / 1000.0);
+}
+
 int main()
 {
+    unitTest();
+
     imageConvert();
     init_opengl();
     init_enemies();
@@ -699,9 +724,6 @@ int main()
 
 void init_enemies()
 {
-    //MakeVector(0.0, 0.0, 0.5, g.brutes[0].pos);
-    //MakeVector(1.0, 0.0, 0.5, g.brutes[1].pos);
-    //MakeVector(-1.0, 0.0, 0.5, g.brutes[2].pos);
     MakeVector(12.5, 0.0, -2.5, g.brutes[0].pos);
     MakeVector(12.5, 0.0, -27.5, g.brutes[1].pos);
     MakeVector(-12.5, 0.0, -27.5, g.brutes[2].pos);
@@ -1114,17 +1136,6 @@ void make_view_matrix(Vec p1, Vec p2, Matrix m)
 }
 
 
-void vecNormalize(Vec v)
-{
-    Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-    if (len == 0.0)
-	return;
-    len = 1.0 / sqrt(len);
-    v[0] *= len;
-    v[1] *= len;
-    v[2] *= len;
-}
-
 void vecScale(Vec v, Flt s)
 {
     v[0] *= s;
@@ -1180,19 +1191,15 @@ void drawBrutes()
 	glRotatef(90, 1, 0, 0);
 	glBegin(GL_QUADS);
 
-	//glTexCoord2f(0.0f, 1.0f);
 	glTexCoord2f(tx, 0.0f);
 	glVertex3f( w, h,-d);
 
-	//glTexCoord2f(0.0f, 0.0f);
 	glTexCoord2f(tx+.5, 0.0f);
 	glVertex3f(-w, h,-d);
 
-	//glTexCoord2f(1.0f, 0.0f);
 	glTexCoord2f(tx+.5, 1.0f);
 	glVertex3f(-w, h, d);
 
-	//glTexCoord2f(1.0f, 1.0f);
 	glTexCoord2f(tx, 1.0f);
 	glVertex3f( w, h, d);
 
@@ -1449,19 +1456,15 @@ void drawPortals()
 	glRotatef(90, 1, 0, 0);
 	glBegin(GL_QUADS);
 
-	//glTexCoord2f(0.0f, 1.0f);
 	glTexCoord2f(tx, 0.0f);
 	glVertex3f( w, h,-d);
 
-	//glTexCoord2f(0.0f, 0.0f);
 	glTexCoord2f(tx+.20, 0.0f);
 	glVertex3f(-w, h,-d);
 
-	//glTexCoord2f(1.0f, 0.0f);
 	glTexCoord2f(tx+.20, 1.0f);
 	glVertex3f(-w, h, d);
 
-	//glTexCoord2f(1.0f, 1.0f);
 	glTexCoord2f(tx, 1.0f);
 	glVertex3f( w, h, d);
 
@@ -1481,12 +1484,10 @@ void drawGun() {
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0f); //Alpha
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-50, (g.yres/2));
-    glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-50, (g.yres/2+100)); 
-    glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+50, (g.yres/2+100));
-    glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+50, (g.yres/2));
-    //TODO Move crosshair lower
-    //
+    glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-20, (g.yres/2));
+    glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-20, (g.yres/2+60)-100); 
+    glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+20, (g.yres/2+60)-100);
+    glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+20, (g.yres/2));
     glEnd();
     glPopMatrix();
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -1512,29 +1513,6 @@ void drawGun() {
 	glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+(g.xres/9),   0);
 	g.shotReset -= 1;
     }
-
-//    glEnd();
-//    glPopMatrix();
-//    glBindTexture(GL_TEXTURE_2D, 0);
-//    glDisable(GL_ALPHA_TEST);
-//
-//    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-//    glPushMatrix();
-//    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-//    glBindTexture(GL_TEXTURE_2D, crosshairSilhouette);
-//    glEnable(GL_ALPHA_TEST);
-//    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
-//    glBegin(GL_QUADS);
-//    glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-50, 100-(g.yres/2));
-//    glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-50, 100-(g.yres/2+100)); 
-//    glTexCoord2f(1.0f, 0.0f); glVertex2i(g.xres/2+50, 100-(g.yres/2+100));
-//    glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+50, 100-(g.yres/2));
-//
-//    glEnd();
-//    glPopMatrix();
-//    glBindTexture(GL_TEXTURE_2D, 0);
-//    glDisable(GL_ALPHA_TEST);
-
 }
 
 void shootFireball(Flt x, Flt y, Flt z) {
@@ -1551,6 +1529,7 @@ void shootFireball(Flt x, Flt y, Flt z) {
     // Normalize vector
     Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
     Vec norm = {v[0]/len, v[1]/len, v[2]/len};
+
 
     MakeVector(x, y, z, g.fireballs[g.nfireballs].pos);
     MakeVector(norm[0]*speed, norm[1]*speed, norm[2]*speed, g.fireballs[g.nfireballs].dir);
@@ -2038,6 +2017,7 @@ void render()
     r.bot = g.yres - 20;
     r.left = 10;
     r.center = 0;
+    ggprint8b(&r, 16, 0x00887766, "");
     ggprint8b(&r, 16, 0x00887766, "FPS: %d", g.fps);
     ggprint8b(&r, 16, 0x00887766, "Health: %f", g.player.health);
     ggprint8b(&r, 16, 0x00887766, "Camera Info:");
