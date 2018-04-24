@@ -699,30 +699,32 @@ int main()
 	    check_mouse(&e);
 	    done = check_keys(&e);
 	}
+	if (g.player.health > 0) {
 
-	// Physics Timers
-	physicsTimer.recordTime(&physicsTimer.timeCurrent);
-	timeSpan = physicsTimer.timeDiff(&physicsTimer.timeStart, &physicsTimer.timeCurrent);
-	physicsTimer.timeCopy(&physicsTimer.timeStart, &physicsTimer.timeCurrent);
-	physicsCountdown += timeSpan;
-	while(physicsCountdown >= physicsTimer.physicsRate) {
-	    physics();
-	    physicsCountdown -= physicsTimer.physicsRate;
+	    // Physics Timers
+	    physicsTimer.recordTime(&physicsTimer.timeCurrent);
+	    timeSpan = physicsTimer.timeDiff(&physicsTimer.timeStart, &physicsTimer.timeCurrent);
+	    physicsTimer.timeCopy(&physicsTimer.timeStart, &physicsTimer.timeCurrent);
+	    physicsCountdown += timeSpan;
+	    while(physicsCountdown >= physicsTimer.physicsRate) {
+		physics();
+		physicsCountdown -= physicsTimer.physicsRate;
+	    }
+
+	    render();
+	    x11.swapBuffers();
+
+	    // FPS Counter
+	    frameCount++;
+	    frameTimer.recordTime(&frameTimer.timeCurrent);
+	    timeSpan = frameTimer.timeDiff(&frameTimer.timeStart, &frameTimer.timeCurrent);
+	    if (timeSpan >= 1.0f) {
+		g.fps = frameCount;
+		frameCount = 0;
+		frameTimer.recordTime(&frameTimer.timeStart);
+	    }
+	    spawnEnemies();
 	}
-
-	render();
-	x11.swapBuffers();
-
-	// FPS Counter
-	frameCount++;
-	frameTimer.recordTime(&frameTimer.timeCurrent);
-	timeSpan = frameTimer.timeDiff(&frameTimer.timeStart, &frameTimer.timeCurrent);
-	if (timeSpan >= 1.0f) {
-	    g.fps = frameCount;
-	    frameCount = 0;
-	    frameTimer.recordTime(&frameTimer.timeStart);
-	}
-	spawnEnemies();
     }
     cleanup_fonts();
     imageClean();
@@ -731,21 +733,6 @@ int main()
 
 void init_enemies()
 {
-    //    MakeVector(12.5, 0.0, -2.5, g.brutes[0].pos);
-    //    MakeVector(12.5, 0.0, -27.5, g.brutes[1].pos);
-    //    MakeVector(-12.5, 0.0, -27.5, g.brutes[2].pos);
-    //    MakeVector(0.0, 0.0, 0.0, g.brutes[0].vel);
-    //    MakeVector(0.0, 0.0, 0.0, g.brutes[1].vel);
-    //    MakeVector(0.0, 0.0, 0.0, g.brutes[2].vel);
-    //    g.nbrutes = 3;
-
-    //    MakeVector(0.0, 1.2, 0.5, g.fliers[0].pos);
-    //    MakeVector(1.0, 1.2, 0.5, g.fliers[1].pos);
-    //    MakeVector(-12.5, 1.2, -2.5, g.fliers[2].pos);
-    //    MakeVector(0.0, 0.0, 0.0, g.fliers[0].vel);
-    //    MakeVector(0.0, 0.0, 0.0, g.fliers[1].vel);
-    //    MakeVector(0.0, 0.0, 0.0, g.fliers[2].vel);
-    //    g.nfliers = 3;
 }
 
 void init_portals()
@@ -851,9 +838,10 @@ void check_mouse(XEvent *e)
 
     if (e->type == ButtonPress) {
 	if (e->xbutton.button==1) {
-	    if (g.shotReset == 0)
+	    if (g.shotReset == 0) {
 		shootBullet();
-	    g.shotReset = 15;
+		g.shotReset = 15;
+	    }
 	}
     }
 
@@ -2086,7 +2074,6 @@ void render()
     drawFireballs();
     drawBullets();
     //
-    //
     //switch to 2D mode
     //
     Rect r;
@@ -2100,20 +2087,20 @@ void render()
     r.left = 10;
     r.center = 0;
     ggprint8b(&r, 16, 0x00887766, "");
-    if (g.player.health < 1)
-	ggprint8b(&r, 16, 0x00887766, "Game Over");
     ggprint8b(&r, 16, 0x00887766, "FPS: %d", g.fps);
     ggprint8b(&r, 16, 0x00887766, "Health: %f", g.player.health);
     ggprint8b(&r, 16, 0x00887766, "Score: %d", g.player.score);
-    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
-    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
-    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
-    ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.player.vel[0], g.player.vel[2]);
-
-    ggprint8b(&r, 16, 0x00887766, "Controls:");
-    ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
-    ggprint8b(&r, 16, 0x00887766, "    w/s: Move Forward/Backward");
-    ggprint8b(&r, 16, 0x00887766, "    a/d: Look Left/Right");
-    ggprint8b(&r, 16, 0x00887766, "    e/q: Strafe Left/Right");
-    ggprint8b(&r, 16, 0x00887766, "    c/z: Strafe Up/Down");
+    if (g.player.health < 1)
+	ggprint8b(&r, 16, 0x00887766, "Game Over");
+//    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
+//    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
+//    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
+//    ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.player.vel[0], g.player.vel[2]);
+//
+//    ggprint8b(&r, 16, 0x00887766, "Controls:");
+//    ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
+//    ggprint8b(&r, 16, 0x00887766, "    w/s: Move Forward/Backward");
+//    ggprint8b(&r, 16, 0x00887766, "    a/d: Look Left/Right");
+//    ggprint8b(&r, 16, 0x00887766, "    e/q: Strafe Left/Right");
+//    ggprint8b(&r, 16, 0x00887766, "    c/z: Strafe Up/Down");
 }
