@@ -68,6 +68,7 @@ class Player {
 	Vec pos;
 	Vec vel;
 	Flt health;
+	int score;
 
 	Vec view;
 	Flt angleH;
@@ -83,6 +84,7 @@ class Player {
 	    MakeVector(0.0, 0.0, 0.0, vel);
 	    MakeVector(0.0, 1.0, 0.0, upv);
 	    health = 100.0;
+	    score = 0;
 	    angleH = 0.0f;
 	    angleV = 0.0f;
 	    lookSpeed = 0.0080f;
@@ -273,7 +275,7 @@ class Brute {
 	struct timespec lastHit;
 	double delay;
 	Brute() {
-	    health = 100.0;
+	    health = 200.0;
 	    spriteFrame = 0;
 	    delay = 0.35;
 	    FRAMECOUNT = 2;
@@ -342,6 +344,7 @@ class Portal {
     public:
 	Vec pos;
 	Timers timer;
+	struct timespec lastSpawn;
 	int FRAMECOUNT;
 	int spriteFrame;
 	double delay;
@@ -349,6 +352,7 @@ class Portal {
 	    spriteFrame = 0;
 	    delay = 0.1;
 	    FRAMECOUNT = 5;
+	    timer.recordTime(&lastSpawn);
 	}
 };
 
@@ -636,6 +640,7 @@ void imageClean()
 void init_opengl();
 void init_enemies();
 void init_portals();
+void spawnEnemies();
 
 void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
@@ -666,13 +671,14 @@ void unitTest () {
     vecNormalize(test1Vec);
     printf("Expected:\n\tX: 0.802000, Y: 0.267000, Z: 0.535000\n");
     printf("Got:\n\tX: %f, Y: %f, Z: %f\n\n",  round( test1Vec[0] * 1000.0 ) / 1000.0,
-	                                       round( test1Vec[1] * 1000.0 ) / 1000.0,
-	                                       round( test1Vec[2] * 1000.0 ) / 1000.0);
+	    round( test1Vec[1] * 1000.0 ) / 1000.0,
+	    round( test1Vec[2] * 1000.0 ) / 1000.0);
 }
 
 int main()
 {
-    unitTest();
+    srand(time(0));
+    //unitTest();
 
     imageConvert();
     init_opengl();
@@ -716,6 +722,7 @@ int main()
 	    frameCount = 0;
 	    frameTimer.recordTime(&frameTimer.timeStart);
 	}
+	spawnEnemies();
     }
     cleanup_fonts();
     imageClean();
@@ -724,21 +731,21 @@ int main()
 
 void init_enemies()
 {
-    MakeVector(12.5, 0.0, -2.5, g.brutes[0].pos);
-    MakeVector(12.5, 0.0, -27.5, g.brutes[1].pos);
-    MakeVector(-12.5, 0.0, -27.5, g.brutes[2].pos);
-    MakeVector(0.0, 0.0, 0.0, g.brutes[0].vel);
-    MakeVector(0.0, 0.0, 0.0, g.brutes[1].vel);
-    MakeVector(0.0, 0.0, 0.0, g.brutes[2].vel);
-    g.nbrutes = 3;
+    //    MakeVector(12.5, 0.0, -2.5, g.brutes[0].pos);
+    //    MakeVector(12.5, 0.0, -27.5, g.brutes[1].pos);
+    //    MakeVector(-12.5, 0.0, -27.5, g.brutes[2].pos);
+    //    MakeVector(0.0, 0.0, 0.0, g.brutes[0].vel);
+    //    MakeVector(0.0, 0.0, 0.0, g.brutes[1].vel);
+    //    MakeVector(0.0, 0.0, 0.0, g.brutes[2].vel);
+    //    g.nbrutes = 3;
 
-    MakeVector(0.0, 1.2, 0.5, g.fliers[0].pos);
-    MakeVector(1.0, 1.2, 0.5, g.fliers[1].pos);
-    MakeVector(-12.5, 1.2, -2.5, g.fliers[2].pos);
-    MakeVector(0.0, 0.0, 0.0, g.fliers[0].vel);
-    MakeVector(0.0, 0.0, 0.0, g.fliers[1].vel);
-    MakeVector(0.0, 0.0, 0.0, g.fliers[2].vel);
-    g.nfliers = 3;
+    //    MakeVector(0.0, 1.2, 0.5, g.fliers[0].pos);
+    //    MakeVector(1.0, 1.2, 0.5, g.fliers[1].pos);
+    //    MakeVector(-12.5, 1.2, -2.5, g.fliers[2].pos);
+    //    MakeVector(0.0, 0.0, 0.0, g.fliers[0].vel);
+    //    MakeVector(0.0, 0.0, 0.0, g.fliers[1].vel);
+    //    MakeVector(0.0, 0.0, 0.0, g.fliers[2].vel);
+    //    g.nfliers = 3;
 }
 
 void init_portals()
@@ -768,6 +775,7 @@ void init_opengl()
     glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_LIGHTING);
     //Ambient light
+    //GLfloat ambientColor[] = {0.2f, 0.2f, 0.2f, 1.0f}; //Color(0.2, 0.2, 0.2)
     GLfloat ambientColor[] = {0.4f, 0.4f, 0.4f, 1.0f}; //Color(0.2, 0.2, 0.2)
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
     //Do this to allow fonts
@@ -845,7 +853,7 @@ void check_mouse(XEvent *e)
 	if (e->xbutton.button==1) {
 	    if (g.shotReset == 0)
 		shootBullet();
-		g.shotReset = 15;
+	    g.shotReset = 15;
 	}
     }
 
@@ -1141,6 +1149,34 @@ void vecScale(Vec v, Flt s)
     v[0] *= s;
     v[1] *= s;
     v[2] *= s;
+}
+
+void spawnEnemies()
+{
+
+    double timeSpan;
+    int enemyType;
+    for (int i = 0; i < g.nportals; i++) {
+	g.portals[i].timer.recordTime(&g.portals[i].timer.timeCurrent);
+	timeSpan = g.portals[i].timer.timeDiff(&g.portals[i].lastSpawn, &g.portals[i].timer.timeCurrent);
+	if (timeSpan > 10) {
+	    enemyType = rand()%2;
+	    switch (enemyType) {
+		case 0:
+		    MakeVector(g.portals[i].pos[0], 0.0, g.portals[i].pos[2], g.brutes[g.nbrutes].pos);
+		    MakeVector(0.0, 0.0, 0.0, g.brutes[g.nbrutes].vel);
+		    g.nbrutes += 1;
+		    g.portals[i].timer.timeCopy(&g.portals[i].lastSpawn, &g.portals[i].timer.timeCurrent);
+		    break;
+		case 1:
+		    MakeVector(g.portals[i].pos[0], 1.2, g.portals[i].pos[2], g.fliers[g.nfliers].pos);
+		    MakeVector(0.0, 0.0, 0.0, g.fliers[g.nfliers].vel);
+		    g.nfliers += 1;
+		    g.portals[i].timer.timeCopy(&g.portals[i].lastSpawn, &g.portals[i].timer.timeCurrent);
+		    break;
+	    }
+	}
+    }
 }
 
 void drawBrutes()
@@ -1538,8 +1574,8 @@ void shootFireball(Flt x, Flt y, Flt z) {
 
 void shootBullet() {
 
-    Flt speed = .5;
-    //Flt speed = .125;
+    Flt speed = .75;
+    //Flt speed = .5;
 
     // Camera center - brute center
     Vec v;
@@ -1827,7 +1863,29 @@ void physics()
 			g.bullets[i].pos[2] > g.brutes[j].pos[2] - 1)   // back of player
 		{
 		    g.brutes[j].health -= 50;
-		    printf("Brute #%d has %f health left\n", j, g.brutes[j].health);
+		    //printf("Brute #%d has %f health left\n", j, g.brutes[j].health);
+
+		    // Copy last fireball to current possition and decrement nbrutes
+		    if (g.brutes[j].health < 1) {
+			g.player.score += 1;
+			if (g.nbrutes > 1) {
+			    g.brutes[j].pos[0] = g.brutes[g.nbrutes-1].pos[0];
+			    g.brutes[j].pos[1] = g.brutes[g.nbrutes-1].pos[1];
+			    g.brutes[j].pos[2] = g.brutes[g.nbrutes-1].pos[2];
+			    g.brutes[j].vel[0] = g.brutes[g.nbrutes-1].vel[0];
+			    g.brutes[j].vel[1] = g.brutes[g.nbrutes-1].vel[1];
+			    g.brutes[j].vel[2] = g.brutes[g.nbrutes-1].vel[2];
+			    g.brutes[j].health = g.brutes[g.nbrutes-1].health;
+			}
+			--g.nbrutes;
+
+			// Move change current fireball if there are still brutes
+			if (g.nbrutes > 0) {
+			    g.brutes[j].pos[0] += g.brutes[j].vel[0];
+			    g.brutes[j].pos[1] += g.brutes[j].vel[1];
+			    g.brutes[j].pos[2] += g.brutes[j].vel[2];
+			}
+		    }
 
 		    // Copy last fireball to current possition and decrement nbullets
 		    if (g.nbullets > 1) {
@@ -1839,7 +1897,7 @@ void physics()
 			g.bullets[i].dir[2] = g.bullets[g.nbullets-1].dir[2];
 		    }
 		    --g.nbullets;
-	    
+
 		    // Move change current fireball if there are still bullets
 		    if (g.nbullets > 0) {
 			g.bullets[i].pos[0] += g.bullets[i].dir[0];
@@ -1859,7 +1917,31 @@ void physics()
 			g.bullets[i].pos[2] > g.fliers[j].pos[2] - .5)   // back of player
 		{
 		    g.fliers[j].health -= 50;
-		    printf("Flier #%d has %f health left\n", j, g.fliers[j].health);
+		    //printf("Flier #%d has %f health left\n", j, g.fliers[j].health);
+
+		    // Copy last fireball to current possition and decrement nbrutes
+		    if (g.fliers[j].health < 1) {
+			g.player.score += 1;
+			if (g.nfliers > 1) {
+			    g.fliers[j].pos[0] = g.fliers[g.nfliers-1].pos[0];
+			    g.fliers[j].pos[1] = g.fliers[g.nfliers-1].pos[1];
+			    g.fliers[j].pos[2] = g.fliers[g.nfliers-1].pos[2];
+			    g.fliers[j].vel[0] = g.fliers[g.nfliers-1].vel[0];
+			    g.fliers[j].vel[1] = g.fliers[g.nfliers-1].vel[1];
+			    g.fliers[j].vel[2] = g.fliers[g.nfliers-1].vel[2];
+			    g.fliers[j].health = g.fliers[g.nfliers-1].health;
+			}
+			--g.nfliers;
+
+			// Move change current fireball if there are still fliers
+			if (g.nfliers > 0) {
+			    g.fliers[j].pos[0] += g.fliers[j].vel[0];
+			    g.fliers[j].pos[1] += g.fliers[j].vel[1];
+			    g.fliers[j].pos[2] += g.fliers[j].vel[2];
+			}
+		    }
+
+
 
 		    // Copy last fireball to current possition and decrement nbullets
 		    if (g.nbullets > 1) {
@@ -1871,7 +1953,7 @@ void physics()
 			g.bullets[i].dir[2] = g.bullets[g.nbullets-1].dir[2];
 		    }
 		    --g.nbullets;
-	    
+
 		    // Move change current fireball if there are still bullets
 		    if (g.nbullets > 0) {
 			g.bullets[i].pos[0] += g.bullets[i].dir[0];
@@ -2018,8 +2100,11 @@ void render()
     r.left = 10;
     r.center = 0;
     ggprint8b(&r, 16, 0x00887766, "");
+    if (g.player.health < 1)
+	ggprint8b(&r, 16, 0x00887766, "Game Over");
     ggprint8b(&r, 16, 0x00887766, "FPS: %d", g.fps);
     ggprint8b(&r, 16, 0x00887766, "Health: %f", g.player.health);
+    ggprint8b(&r, 16, 0x00887766, "Score: %d", g.player.score);
     ggprint8b(&r, 16, 0x00887766, "Camera Info:");
     ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
     ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
