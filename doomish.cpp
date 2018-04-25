@@ -88,8 +88,6 @@ class Player {
 	    angleH = 0.0f;
 	    angleV = 0.0f;
 	    lookSpeed = 0.0080f;
-	    //lookSpeed = 0.015f;
-	    //lookSpeed = 0.0175f;
 	    moveSpeed = .1f;
 	    strafeSpeed = .10f;
 	}
@@ -345,6 +343,7 @@ class Portal {
 	Vec pos;
 	Timers timer;
 	struct timespec lastSpawn;
+	Flt nextSpawnDelay;
 	int FRAMECOUNT;
 	int spriteFrame;
 	double delay;
@@ -353,6 +352,7 @@ class Portal {
 	    delay = 0.1;
 	    FRAMECOUNT = 5;
 	    timer.recordTime(&lastSpawn);
+	    nextSpawnDelay = rnd() * 5;
 	}
 };
 
@@ -762,9 +762,10 @@ void init_opengl()
     glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_LIGHTING);
     //Ambient light
-    //GLfloat ambientColor[] = {0.2f, 0.2f, 0.2f, 1.0f}; //Color(0.2, 0.2, 0.2)
     GLfloat ambientColor[] = {0.4f, 0.4f, 0.4f, 1.0f}; //Color(0.2, 0.2, 0.2)
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
+    
+
     //Do this to allow fonts
     glEnable(GL_TEXTURE_2D);
     initialize_fonts();
@@ -1147,7 +1148,7 @@ void spawnEnemies()
     for (int i = 0; i < g.nportals; i++) {
 	g.portals[i].timer.recordTime(&g.portals[i].timer.timeCurrent);
 	timeSpan = g.portals[i].timer.timeDiff(&g.portals[i].lastSpawn, &g.portals[i].timer.timeCurrent);
-	if (timeSpan > 10) {
+	if (timeSpan > 5+g.portals[i].nextSpawnDelay) {
 	    enemyType = rand()%2;
 	    switch (enemyType) {
 		case 0:
@@ -1368,11 +1369,11 @@ void drawFireballs()
 
 void drawBullets()
 {
-    Flt w = 0.15;
-    Flt d = 0.15;
+    Flt w = 0.05;
+    Flt d = 0.05;
     Flt h = 0.0;
 
-    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    glColor4f(0.0, 0.2, 0.2, 1.0); // reset gl color
     for (int i = 0; i < g.nbullets; i++) {
 
 	glPushMatrix();
@@ -1562,8 +1563,8 @@ void shootFireball(Flt x, Flt y, Flt z) {
 
 void shootBullet() {
 
-    Flt speed = .75;
-    //Flt speed = .5;
+    Flt speed = .85;
+    //Flt speed = .75;
 
     // Camera center - brute center
     Vec v;
@@ -2064,7 +2065,6 @@ void render()
 	    g.player.view[0], g.player.view[1], g.player.view[2],
 	    g.player.upv[0],  g.player.upv[1], g.player.upv[2]);
 
-    glLightfv(GL_LIGHT0, GL_POSITION, g.lightPosition);
     //
     drawFloor();
     drawWall();
@@ -2083,15 +2083,28 @@ void render()
     gluOrtho2D(0, g.xres, 0, g.yres);
     glDisable(GL_LIGHTING);
     drawGun();
-    r.bot = g.yres - 20;
-    r.left = 10;
     r.center = 0;
+
+    // FPS
+    r.bot = g.yres-5;
+    r.left = g.xres-50;
     ggprint8b(&r, 16, 0x00887766, "");
     ggprint8b(&r, 16, 0x00887766, "FPS: %d", g.fps);
-    ggprint8b(&r, 16, 0x00887766, "Health: %f", g.player.health);
-    ggprint8b(&r, 16, 0x00887766, "Score: %d", g.player.score);
-    if (g.player.health < 1)
-	ggprint8b(&r, 16, 0x00887766, "Game Over");
+
+    // Health/score
+    r.bot = g.yres - 35;
+    r.left = 10;
+    if (g.player.health > 1) {
+	ggprint16(&r, 32, 0x00887766, "Health: %d", (int)g.player.health);
+	ggprint16(&r, 32, 0x00887766, "Score: %d", g.player.score);
+    } else {
+	r.bot = g.yres/2+100;
+	r.left = g.xres/2-95;
+	ggprint40(&r, 40, 0x00887766, "Game Over");
+	r.left = g.xres/2-70;
+	ggprint40(&r, 80, 0x00887766, "Score: %d", g.player.score);
+    }
+
 //    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
 //    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
 //    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
