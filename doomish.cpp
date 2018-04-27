@@ -381,9 +381,6 @@ class Global {
 
 	Global() {
 	    shotReset = 0;
-	    //constructor
-	    //xres = 1024; 
-	    //yres = 768;
 	    xres = 0.0;
 	    yres = 0.0;
 	    fps = 0;
@@ -409,10 +406,6 @@ class Global {
 	    s_mask = 0x04;
 	    d_mask = 0x08;
 
-	    //light is up high, right a little, toward a little
-	    MakeVector(50.0f, 0.0f, 25.0f, lightPosition);
-	    lightPosition[3] = 1.0f;
-
 	    brutes = new Brute[100];
 	    nbrutes = 0;
 	    fliers = new Flier[100];
@@ -421,7 +414,6 @@ class Global {
 	    nfireballs = 0;
 	    bullets = new Bullet[100];
 	    nbullets = 0;
-
 
 	    portals = new Portal[10];
 	    nportals = 0;
@@ -630,33 +622,13 @@ int check_keys(XEvent *e);
 void physics();
 void render();
 
+void unitTest();
+
 void init_image(char * imagePath, Ppmimage * image, GLuint * texture);
 unsigned char *buildAlphaData(Ppmimage *img);
 void init_alpha_image(char * imagePath, Ppmimage * image,
 	GLuint * texture, GLuint * silhouette);
 
-void vecNormalize(Vec v)
-{
-    Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-    if (len == 0.0)
-	return;
-    len = 1.0 / sqrt(len);
-    v[0] *= len;
-    v[1] *= len;
-    v[2] *= len;
-}
-
-
-void unitTest () {
-
-    Vec test1Vec;
-    MakeVector(3.0, 1.0, 2.0, test1Vec);
-    vecNormalize(test1Vec);
-    printf("Expected:\n\tX: 0.802000, Y: 0.267000, Z: 0.535000\n");
-    printf("Got:\n\tX: %f, Y: %f, Z: %f\n\n",  round( test1Vec[0] * 1000.0 ) / 1000.0,
-	    round( test1Vec[1] * 1000.0 ) / 1000.0,
-	    round( test1Vec[2] * 1000.0 ) / 1000.0);
-}
 
 int main()
 {
@@ -740,9 +712,10 @@ void init_opengl()
     glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_LIGHTING);
     //Ambient light
-    GLfloat ambientColor[] = {0.4f, 0.4f, 0.4f, 1.0f}; //Color(0.2, 0.2, 0.2)
+    GLfloat ambientColor[] = {0.3f, 0.3f, 0.3f, 1.0f}; //Color(0.2, 0.2, 0.2)
+    //GLfloat ambientColor[] = {0.4f, 0.4f, 0.4f, 1.0f}; //Color(0.2, 0.2, 0.2)
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
-    
+
 
     //Do this to allow fonts
     glEnable(GL_TEXTURE_2D);
@@ -812,9 +785,6 @@ void init_opengl()
 
 void check_mouse(XEvent *e)
 {
-    //Did the mouse move?
-    //Was a mouse button clicked?
-
     if (e->type == ButtonPress) {
 	if (e->xbutton.button==1) {
 	    if (g.shotReset == 0) {
@@ -1512,6 +1482,17 @@ void drawGun() {
     }
 }
 
+void vecNormalize(Vec v)
+{
+    Flt len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+    if (len == 0.0)
+	return;
+    len = 1.0 / sqrt(len);
+    v[0] *= len;
+    v[1] *= len;
+    v[2] *= len;
+}
+
 void shootFireball(Flt x, Flt y, Flt z) {
 
     Flt speed = .25;
@@ -1942,18 +1923,19 @@ void physics()
     }
 
 
-for (int i = 0; i < g.nportals; i++) {
+    // Portal physics
+    for (int i = 0; i < g.nportals; i++) {
 
-    // Sprite Animation
-    g.portals[i].timer.recordTime(&g.portals[i].timer.timeCurrent);
-    double timeSpan = g.portals[i].timer.timeDiff(&g.portals[i].timer.animTime, &g.portals[i].timer.timeCurrent);
-    if (timeSpan > g.portals[i].delay) {
-	++g.portals[i].spriteFrame;
-	if(g.portals[i].spriteFrame >= g.portals[i].FRAMECOUNT)
-	    g.portals[i].spriteFrame = 0;
-	g.portals[i].timer.recordTime(&g.portals[i].timer.animTime);
+	// Sprite Animation
+	g.portals[i].timer.recordTime(&g.portals[i].timer.timeCurrent);
+	double timeSpan = g.portals[i].timer.timeDiff(&g.portals[i].timer.animTime, &g.portals[i].timer.timeCurrent);
+	if (timeSpan > g.portals[i].delay) {
+	    ++g.portals[i].spriteFrame;
+	    if(g.portals[i].spriteFrame >= g.portals[i].FRAMECOUNT)
+		g.portals[i].spriteFrame = 0;
+	    g.portals[i].timer.recordTime(&g.portals[i].timer.animTime);
+	}
     }
-}
 }
 
 void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
@@ -2045,7 +2027,8 @@ void render()
     drawBrutes();
     drawFliers();
     drawFireballs();
-    drawBullets();
+    // Show bullet trajectory for debugging
+    //drawBullets();
     //
     //switch to 2D mode
     //
@@ -2079,15 +2062,28 @@ void render()
 	ggprint16(&r, 32, 0x00887766, "Pres ESC to exit");
     }
 
-//    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
-//    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
-//    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
-//    ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.player.vel[0], g.player.vel[2]);
-//
-//    ggprint8b(&r, 16, 0x00887766, "Controls:");
-//    ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
-//    ggprint8b(&r, 16, 0x00887766, "    w/s: Move Forward/Backward");
-//    ggprint8b(&r, 16, 0x00887766, "    a/d: Look Left/Right");
-//    ggprint8b(&r, 16, 0x00887766, "    e/q: Strafe Left/Right");
-//    ggprint8b(&r, 16, 0x00887766, "    c/z: Strafe Up/Down");
+    //    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
+    //    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
+    //    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
+    //    ggprint8b(&r, 16, 0x00887766, "    Velocity: [%.2f, %.2f]", g.player.vel[0], g.player.vel[2]);
+    //
+    //    ggprint8b(&r, 16, 0x00887766, "Controls:");
+    //    ggprint8b(&r, 16, 0x00887766, "    Mouse: Look Around");
+    //    ggprint8b(&r, 16, 0x00887766, "    w/s: Move Forward/Backward");
+    //    ggprint8b(&r, 16, 0x00887766, "    a/d: Look Left/Right");
+    //    ggprint8b(&r, 16, 0x00887766, "    e/q: Strafe Left/Right");
+    //    ggprint8b(&r, 16, 0x00887766, "    c/z: Strafe Up/Down");
 }
+
+void unitTest () {
+
+    Vec test1Vec;
+    MakeVector(3.0, 1.0, 2.0, test1Vec);
+    vecNormalize(test1Vec);
+    printf("Expected:\n\tX: 0.802000, Y: 0.267000, Z: 0.535000\n");
+    printf("Got:\n\tX: %f, Y: %f, Z: %f\n\n",  round( test1Vec[0] * 1000.0 ) / 1000.0,
+	    round( test1Vec[1] * 1000.0 ) / 1000.0,
+	    round( test1Vec[2] * 1000.0 ) / 1000.0);
+}
+
+
