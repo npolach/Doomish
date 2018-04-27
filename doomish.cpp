@@ -57,19 +57,18 @@ Ppmimage * crosshairImage;
 GLuint crosshairTexture;
 GLuint crosshairSilhouette;
 
-Ppmimage * floor1Image=NULL;
+Ppmimage * floor1Image;
 GLuint floor1Texture;
 
-Ppmimage * wall1Image=NULL;
+Ppmimage * wall1Image;
 GLuint wall1Texture;
 
 class Player {
     public:
-	Vec pos;
-	Vec vel;
 	Flt health;
 	int score;
 
+	Vec pos;
 	Vec view;
 	Flt angleH;
 	Flt angleV;
@@ -79,14 +78,14 @@ class Player {
 	Flt strafeSpeed;
 
 	Player() {
-	    MakeVector(0.0, 0.0, 5.0, pos);
-	    MakeVector(0.0, 0.0, 0.0, view);
-	    MakeVector(0.0, 0.0, 0.0, vel);
-	    MakeVector(0.0, 1.0, 0.0, upv);
 	    health = 100.0;
 	    score = 0;
+
+	    MakeVector(0.0, 0.0, 5.0, pos);
+	    MakeVector(0.0, 0.0, 0.0, view);
 	    angleH = 0.0f;
 	    angleV = 0.0f;
+	    MakeVector(0.0, 1.0, 0.0, upv);
 	    lookSpeed = 0.0080f;
 	    moveSpeed = .1f;
 	    strafeSpeed = .10f;
@@ -238,7 +237,6 @@ class Player {
 	}
 };
 
-//Setup timers
 class Timers {
     public:
 	double physicsRate;
@@ -281,8 +279,6 @@ class Brute {
 	}
 };
 
-void shootFireball(Flt, Flt, Flt);
-void shootBullet();
 
 class Flier {
     public:
@@ -577,18 +573,11 @@ class X11_wrapper {
 
 } x11;
 
-//Spritesheet dimensions
-// Brute: 41x57 : 2 sprites
-// Fliers: 45x47 : 4 sprites
-// Portal: 64x64 : 5 sprites
 void imageConvert()
 {
     //    //clean up all images in master folder
     remove("./images/floor1.ppm");
     remove("./images/wall1.ppm");
-    //remove("./images/imp.ppm");
-    //remove("./images/flier.ppm");
-    //remove("./images/portal.ppm");
 
     // Spritesheets
     remove("./images/brutesheet.ppm");
@@ -600,13 +589,9 @@ void imageConvert()
     remove("./images/crosshairsheet.ppm");
 
 
-    //
     //    //convert images to ppm
     system("mogrify -format ppm ./images/floor1.jpg");
     system("mogrify -format ppm ./images/wall1.jpg");
-    //system("mogrify -format ppm ./images/imp.jpg");
-    //system("mogrify -format ppm ./images/flier.jpg");
-    //system("mogrify -format ppm ./images/portal.jpg");
 
     // Spritesheets
     system("mogrify -format ppm ./images/brutesheet.png");
@@ -614,7 +599,6 @@ void imageConvert()
     system("mogrify -format ppm ./images/portalsheet.jpg");
     system("mogrify -format ppm ./images/fireballsheet.jpg");
     system("mogrify -format ppm ./images/fireballsheet2.jpg");
-    //system("mogrify -format ppm ./images/gunsheet.jpg");
     system("mogrify -format ppm ./images/gunsheet.png");
     system("mogrify -format ppm ./images/crosshairsheet.png");
 }
@@ -624,9 +608,6 @@ void imageClean()
     //clean up all images in master folder
     remove("./images/floor1.ppm");
     remove("./images/wall1.ppm");
-    //remove("./images/imp.ppm");
-    //remove("./images/flier.ppm");
-    //remove("./images/portal.ppm");
 
     // Spritesheets
     remove("./images/brutesheet.ppm");
@@ -639,9 +620,10 @@ void imageClean()
 }
 
 void init_opengl();
-void init_enemies();
 void init_portals();
+
 void spawnEnemies();
+void shootBullet();
 
 void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
@@ -683,7 +665,6 @@ int main()
 
     imageConvert();
     init_opengl();
-    init_enemies();
     init_portals();
     int done=0;
     int frameCount=0;
@@ -732,10 +713,6 @@ int main()
     return 0;
 }
 
-void init_enemies()
-{
-}
-
 void init_portals()
 {
     MakeVector(12.5, 0.0, -2.5, g.portals[0].pos);
@@ -779,16 +756,16 @@ void init_opengl()
     init_alpha_image((char *)"./images/fliersheet.ppm",
 	    flierImage, &flierTexture, &flierSilhouette);
 
-    // Initialize flier image
+    // Initialize fireball image
     init_alpha_image((char *)"./images/fireballsheet2.ppm",
 	    fireballImage, &fireballTexture, &fireballSilhouette);
 
-    // Initialize flier image
+    // Initialize gun image
     // 79x100
     init_alpha_image((char *)"./images/gunsheet.ppm",
 	    gunImage, &gunTexture, &gunSilhouette);
 
-    // Initialize flier image
+    // Initialize crosshair image
     // 79x100
     init_alpha_image((char *)"./images/crosshairsheet.ppm",
 	    crosshairImage, &crosshairTexture, &crosshairSilhouette);
@@ -878,7 +855,6 @@ void check_mouse(XEvent *e)
 int check_keys(XEvent *e)
 {
     GLXDrawable drawable = glXGetCurrentDrawable();
-    //static int shift = false;
     //Was there input from the keyboard?
     if (e->type != KeyPress && e->type != KeyRelease)
 	return 0;
@@ -903,10 +879,6 @@ int check_keys(XEvent *e)
     }
 
     if (e->type == KeyPress) {
-	if (key == XK_Shift_L || key == XK_Shift_R) {
-	    //shift = true;
-	    return 0;
-	}
 	//Was there input from the keyboard?
 	switch(key) {
 	    // Camera angle
@@ -950,7 +922,6 @@ void drawFloor()
 
     glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
     glPushMatrix();
-    //glTranslated(0, 0, 0);
     glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
     glBindTexture(GL_TEXTURE_2D, floor1Texture);
     glBegin(GL_QUADS);
@@ -1543,7 +1514,7 @@ void drawGun() {
 
 void shootFireball(Flt x, Flt y, Flt z) {
 
-    Flt speed = .15;
+    Flt speed = .25;
     //Flt speed = .125;
 
     // Camera center - brute center
@@ -1553,9 +1524,8 @@ void shootFireball(Flt x, Flt y, Flt z) {
     v[2] = g.player.pos[2] - z;
 
     // Normalize vector
-    Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-    Vec norm = {v[0]/len, v[1]/len, v[2]/len};
-
+    Vec norm = {v[0], v[1], v[2]};
+    vecNormalize(norm);
 
     MakeVector(x, y, z, g.fireballs[g.nfireballs].pos);
     MakeVector(norm[0]*speed, norm[1]*speed, norm[2]*speed, g.fireballs[g.nfireballs].dir);
@@ -1564,8 +1534,7 @@ void shootFireball(Flt x, Flt y, Flt z) {
 
 void shootBullet() {
 
-    Flt speed = .85;
-    //Flt speed = .75;
+    Flt speed = .90;
 
     // Camera center - brute center
     Vec v;
@@ -1574,15 +1543,13 @@ void shootBullet() {
     v[2] = g.player.pos[2] - g.player.view[2];
 
     // Normalize vector
-    Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-    Vec norm = {v[0]/len, v[1]/len, v[2]/len};
+    Vec norm = {v[0], v[1], v[2]};
+    vecNormalize(norm);
 
     MakeVector(g.player.pos[0], g.player.pos[1]+.4, g.player.pos[2], g.bullets[g.nbullets].pos);
     MakeVector(-norm[0]*speed, -norm[1]*speed, -norm[2]*speed, g.bullets[g.nbullets].dir);
     g.nbullets++;
 }
-
-
 
 void physics()
 {
@@ -1608,6 +1575,7 @@ void physics()
 	}
     }
 
+    // Brute physics
     for (int i = 0; i < g.nbrutes; i++) {
 
 	// Sprite Animation
@@ -1627,10 +1595,11 @@ void physics()
 	v[2] = g.player.pos[2] - g.brutes[i].pos[2];
 
 	// Normalize vector
+	Vec norm = {v[0], v[1], v[2]};
+	vecNormalize(norm);
+
 	Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 	if (len > 1.5) {
-	    Vec norm = {v[0]/len, v[1]/len, v[2]/len};
-
 	    g.brutes[i].vel[0] = norm[0]*.02;
 	    g.brutes[i].vel[1] = norm[1]*.02;
 	    g.brutes[i].vel[2] = norm[2]*.02;
@@ -1673,6 +1642,7 @@ void physics()
 
     }
 
+    // Flier physics
     for (int i = 0; i < g.nfliers; i++) {
 
 	// Sprite Animation
@@ -1698,13 +1668,14 @@ void physics()
 	v[2] = g.player.pos[2] - g.fliers[i].pos[2];
 
 	// Normalize vector
-	Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-	Vec norm = {v[0]/len, v[1]/len, v[2]/len};
+	Vec norm = {v[0], v[1], v[2]};
+	vecNormalize(norm);
 
 	g.fliers[i].vel[0] = norm[0]*.04;
 	g.fliers[i].vel[1] = norm[1]*.04;
 	g.fliers[i].vel[2] = norm[2]*.04;
 
+	Flt len = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 	if (len > 10) {
 	    g.fliers[i].pos[0] += g.fliers[i].vel[0];
 	    g.fliers[i].pos[2] += g.fliers[i].vel[2];
@@ -1732,6 +1703,7 @@ void physics()
 	}
     }
 
+    // Fireball physics
     for (int i = 0; i < g.nfireballs; i++) {
 
 	// Constant direction
@@ -1810,6 +1782,7 @@ void physics()
 
     }
 
+    // Bullet physics
     for (int i = 0; i < g.nbullets; i++) {
 
 	// Constant direction
@@ -1967,7 +1940,6 @@ void physics()
 	}
 
     }
-    //}
 
 
 for (int i = 0; i < g.nportals; i++) {
@@ -2103,8 +2075,8 @@ void render()
 	r.left = g.xres/2-95;
 	ggprint40(&r, 40, 0x00887766, "Game Over");
 	r.left = g.xres/2-70;
-	ggprint40(&r, 80, 0x00887766, "Score: %d", g.player.score);
-	ggprint16(&r, 80, 0x00887766, "Pres ESC to exit");
+	ggprint40(&r, 40, 0x00887766, "Score: %d", g.player.score);
+	ggprint16(&r, 32, 0x00887766, "Pres ESC to exit");
     }
 
 //    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
