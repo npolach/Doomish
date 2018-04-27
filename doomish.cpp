@@ -609,13 +609,14 @@ void imageConvert()
     //system("mogrify -format ppm ./images/portal.jpg");
 
     // Spritesheets
-    system("mogrify -format ppm ./images/brutesheet.jpg");
+    system("mogrify -format ppm ./images/brutesheet.png");
     system("mogrify -format ppm ./images/fliersheet.jpg");
     system("mogrify -format ppm ./images/portalsheet.jpg");
     system("mogrify -format ppm ./images/fireballsheet.jpg");
     system("mogrify -format ppm ./images/fireballsheet2.jpg");
-    system("mogrify -format ppm ./images/gunsheet.jpg");
-    system("mogrify -format ppm ./images/crosshairsheet.jpg");
+    //system("mogrify -format ppm ./images/gunsheet.jpg");
+    system("mogrify -format ppm ./images/gunsheet.png");
+    system("mogrify -format ppm ./images/crosshairsheet.png");
 }
 
 void imageClean()
@@ -2103,6 +2104,7 @@ void render()
 	ggprint40(&r, 40, 0x00887766, "Game Over");
 	r.left = g.xres/2-70;
 	ggprint40(&r, 80, 0x00887766, "Score: %d", g.player.score);
+	ggprint16(&r, 80, 0x00887766, "Pres ESC to exit");
     }
 
 //    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
