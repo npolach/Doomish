@@ -63,6 +63,9 @@ GLuint floor1Texture;
 Ppmimage * wall1Image;
 GLuint wall1Texture;
 
+// TODO
+// Explosion when bullet collides with enemy
+
 class Player {
     public:
 	Flt health;
@@ -352,6 +355,22 @@ class Portal {
 	}
 };
 
+class Explosion {
+    public:
+	Vec pos;
+	Timers timer;
+	Flt lifeLength;
+	int FRAMECOUNT;
+	int spriteFrame;
+	double delay;
+	Explosion() {
+	    spriteFrame = 0;
+	    delay = 0.125;
+	    FRAMECOUNT = 5;
+	    lifeLength=0.25;
+	}
+};
+
 class Global {
     public:
 	int xres, yres;
@@ -375,6 +394,9 @@ class Global {
 	int nfireballs;
 	Bullet * bullets;
 	int nbullets;
+	Explosion * explosions;
+	int nexplosions;
+
 
 	Portal * portals;
 	int nportals;
@@ -414,6 +436,9 @@ class Global {
 	    nfireballs = 0;
 	    bullets = new Bullet[100];
 	    nbullets = 0;
+	    explosions = new Explosion[100];
+	    nexplosions = 0;
+
 
 	    portals = new Portal[10];
 	    nportals = 0;
@@ -561,8 +586,6 @@ class X11_wrapper {
 	    //it will undo the last change done by XDefineCursor
 	    //(thus do only use ONCE XDefineCursor and then XUndefineCursor):
 	}
-
-
 } x11;
 
 void imageConvert()
@@ -789,6 +812,7 @@ void check_mouse(XEvent *e)
 	if (e->xbutton.button==1) {
 	    if (g.shotReset == 0) {
 		shootBullet();
+		g.player.moveBackward();
 		g.shotReset = 15;
 	    }
 	}
@@ -1309,6 +1333,81 @@ void drawFireballs()
     glDisable(GL_ALPHA_TEST);
 }
 
+void drawExplosions()
+{
+    Flt w = 0.35;
+    Flt d = 0.35;
+    Flt h = 0.0;
+
+    double timeSpan;
+    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+    for (int i = 0; i < g.nexplosions; i++) {
+	g.explosions[i].timer.recordTime(&g.explosions[i].timer.timeCurrent);
+	timeSpan = g.explosions[i].timer.timeDiff(&g.explosions[i].timer.timeStart, &g.explosions[i].timer.timeCurrent);
+
+	//printf("timeSpan: %f\n", timeSpan);
+	if (timeSpan < g.explosions[i].lifeLength) {
+	    w =  timeSpan / g.explosions[i].lifeLength;
+	    d =  timeSpan / g.explosions[i].lifeLength;
+	    glPushMatrix();
+	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	    glBindTexture(GL_TEXTURE_2D, fireballSilhouette);
+	    glEnable(GL_ALPHA_TEST);
+	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+
+	    glTranslated(g.explosions[i].pos[0], g.explosions[i].pos[1]-.5, g.explosions[i].pos[2]);
+	    ///// Billboarding
+	    //Setup camera rotation matrix
+	    //
+	    Vec v;
+	    VecSub(g.explosions[i].pos, g.player.pos, v);
+	    Vec z = {0.0f, 0.0f, 0.0f};
+	    make_view_matrix(z, v, g.cameraMatrix);
+	    //
+	    //Billboard_to_camera();
+	    //
+	    float mat[16];
+	    mat[ 0] = g.cameraMatrix[0][0];
+	    mat[ 1] = g.cameraMatrix[0][1];
+	    mat[ 2] = g.cameraMatrix[0][2];
+	    mat[ 4] = g.cameraMatrix[1][0];
+	    mat[ 5] = g.cameraMatrix[1][1];
+	    mat[ 6] = g.cameraMatrix[1][2];
+	    mat[ 8] = g.cameraMatrix[2][0];
+	    mat[ 9] = g.cameraMatrix[2][1];
+	    mat[10] = g.cameraMatrix[2][2];
+	    mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+	    mat[15] = 1.0f;
+	    glMultMatrixf(mat);
+	    //
+	    ///// End Billboarding
+
+	    float tx = g.explosions[i].spriteFrame * .20;
+
+	    glRotatef(90, 1, 0, 0);
+	    glBegin(GL_QUADS);
+
+	    glTexCoord2f(tx, 0.0f);
+	    glVertex3f( w, h,-d);
+
+	    glTexCoord2f(tx+.20, 0.0f);
+	    glVertex3f(-w, h,-d);
+
+	    glTexCoord2f(tx+.20, 1.0f);
+	    glVertex3f(-w, h, d);
+
+	    glTexCoord2f(tx, 1.0f);
+	    glVertex3f( w, h, d);
+
+	    glEnd();
+	    glPopMatrix();
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_ALPHA_TEST);
+    }
+}
+
+
 void drawBullets()
 {
     Flt w = 0.05;
@@ -1531,6 +1630,15 @@ void shootBullet() {
     MakeVector(-norm[0]*speed, -norm[1]*speed, -norm[2]*speed, g.bullets[g.nbullets].dir);
     g.nbullets++;
 }
+
+void makeExplosion(Flt x, Flt y, Flt z) {
+
+    printf("Added explosion at %f, %f, %f\n", x, y, z);
+    g.explosions[g.nexplosions].timer.recordTime(&g.explosions[g.nexplosions].timer.timeStart);
+    MakeVector(x, y, z, g.explosions[g.nexplosions].pos);
+    g.nexplosions++;
+}
+
 
 void physics()
 {
@@ -1778,6 +1886,7 @@ void physics()
 		g.bullets[i].pos[2] < -37.4f || //
 		g.bullets[i].pos[2] > 7.4f)     //
 	{
+	    makeExplosion(g.bullets[i].pos[0], g.bullets[i].pos[1], g.bullets[i].pos[2]);
 
 	    // Copy last fireball to current possition and decrement nbullets
 	    if (g.nbullets > 1) {
@@ -1806,6 +1915,7 @@ void physics()
 			g.bullets[i].pos[2] < g.brutes[j].pos[2] + 1 && // front of player
 			g.bullets[i].pos[2] > g.brutes[j].pos[2] - 1)   // back of player
 		{
+		    makeExplosion(g.bullets[i].pos[0], g.bullets[i].pos[1], g.bullets[i].pos[2]);
 		    g.brutes[j].health -= 50;
 		    //printf("Brute #%d has %f health left\n", j, g.brutes[j].health);
 
@@ -1860,6 +1970,7 @@ void physics()
 			g.bullets[i].pos[2] < g.fliers[j].pos[2] + .5 && // front of player
 			g.bullets[i].pos[2] > g.fliers[j].pos[2] - .5)   // back of player
 		{
+		    makeExplosion(g.bullets[i].pos[0], g.bullets[i].pos[1], g.bullets[i].pos[2]);
 		    g.fliers[j].health -= 50;
 		    //printf("Flier #%d has %f health left\n", j, g.fliers[j].health);
 
@@ -2028,7 +2139,8 @@ void render()
     drawFliers();
     drawFireballs();
     // Show bullet trajectory for debugging
-    //drawBullets();
+    drawBullets();
+    drawExplosions();
     //
     //switch to 2D mode
     //
