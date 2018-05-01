@@ -69,6 +69,10 @@ GLuint wall1Texture;
 ALuint alPistolBuffer;
 ALuint alPistolSource;
 
+ALuint alFireballBuffer;
+ALuint alFireballSource;
+
+
 class Player {
     public:
 	Flt health;
@@ -823,11 +827,12 @@ void init_openal()
     }
     //Clear error state.
     alGetError();
+    alDopplerVelocity(16);
     //
     //Setup the listener.
     //Forward and up vectors are used.
-    float vec[6] = {1.0f,1.0f,1.0f, 1.0f,1.0f,1.0f};
-    //float vec[6] = {0.0f,0.0f,1.0f, 0.0f,1.0f,0.0f};
+    //float vec[6] = {1.0f,1.0f,1.0f, 1.0f,1.0f,1.0f};
+    float vec[6] = {0.0f,0.0f,1.0f, 0.0f,1.0f,0.0f};
     alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
     alListenerfv(AL_ORIENTATION, vec);
     alListenerf(AL_GAIN, 1.0f);
@@ -846,6 +851,21 @@ void init_openal()
     alSourcef(alPistolSource, AL_PITCH, 1.0f);
     alSourcei(alPistolSource, AL_LOOPING, AL_FALSE);
 
+    // Fireball Sound
+    //Buffer holds the sound information.
+    alFireballBuffer = alutCreateBufferFromFile("./sounds/fireball.wav");
+    //
+    //Source refers to the sound.
+    //Generate a source, and store it in a buffer.
+    alGenSources(1, &alFireballSource);
+    alSourcei(alFireballSource, AL_BUFFER, alFireballBuffer);
+    //Set volume and pitch to normal, no looping of sound.
+    alSourcef(alFireballSource, AL_GAIN, 0.20f);
+    //alSourcef(alFireballSource, AL_GAIN, 0.20f);
+    alSourcef(alFireballSource, AL_PITCH, 1.0f);
+    alSourcei(alFireballSource, AL_LOOPING, AL_FALSE);
+
+
     if (alGetError() != AL_NO_ERROR) {
 	printf("ERROR: setting source\n");
     }
@@ -859,6 +879,12 @@ void cleanup_sounds()
     alDeleteSources(1, &alPistolSource);
     //delete buffer
     alDeleteBuffers(1, &alPistolBuffer);
+
+    //delete the source
+    alDeleteSources(1, &alFireballSource);
+    //delete buffer
+    alDeleteBuffers(1, &alFireballBuffer);
+
 
     //close out openal
     //get active context
@@ -1776,7 +1802,18 @@ void shootFireball(Flt x, Flt y, Flt z)
 
     MakeVector(x, y, z, g.fireballs[g.nfireballs].pos);
     MakeVector(norm[0]*speed, norm[1]*speed, norm[2]*speed, g.fireballs[g.nfireballs].dir);
+
+    // Fireball sound position
+    Vec p;
+    p[0] = x * .05f;
+    p[1] = y * .05f;
+    p[2] = z * .05f;
+    alSourcefv(alFireballSource, AL_POSITION, p);
+    alSourcefv(alFireballSource, AL_VELOCITY, g.fireballs[g.nfireballs].dir);
+
     g.nfireballs++;
+
+    play_sound(alFireballSource);
 }
 
 void shootBullet()
