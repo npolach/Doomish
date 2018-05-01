@@ -16,6 +16,7 @@
 #include "fonts.h"
 #include <iostream>
 #include "ppm.h"
+#include <queue>
 
 typedef float Flt;
 typedef Flt Vec[3];
@@ -64,7 +65,6 @@ Ppmimage * wall1Image;
 GLuint wall1Texture;
 
 // TODO
-// Explosion when bullet collides with enemy
 
 class Player {
     public:
@@ -394,8 +394,9 @@ class Global {
 	int nfireballs;
 	Bullet * bullets;
 	int nbullets;
-	Explosion * explosions;
-	int nexplosions;
+	std::deque<Explosion> explosions;
+	//Explosion * explosions;
+	//int nexplosions;
 
 
 	Portal * portals;
@@ -436,8 +437,8 @@ class Global {
 	    nfireballs = 0;
 	    bullets = new Bullet[100];
 	    nbullets = 0;
-	    explosions = new Explosion[100];
-	    nexplosions = 0;
+	    //explosions = new Explosion[100];
+	    //nexplosions = 0;
 
 
 	    portals = new Portal[10];
@@ -1339,16 +1340,18 @@ void drawExplosions()
     Flt d = 0.35;
     Flt h = 0.0;
 
+    bool removeItem = false;
+
     double timeSpan;
     glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
-    for (int i = 0; i < g.nexplosions; i++) {
+    for (unsigned int i = 0; i < g.explosions.size(); i++) {
 	g.explosions[i].timer.recordTime(&g.explosions[i].timer.timeCurrent);
 	timeSpan = g.explosions[i].timer.timeDiff(&g.explosions[i].timer.timeStart, &g.explosions[i].timer.timeCurrent);
 
 	//printf("timeSpan: %f\n", timeSpan);
 	if (timeSpan < g.explosions[i].lifeLength) {
-	    w =  timeSpan / g.explosions[i].lifeLength;
-	    d =  timeSpan / g.explosions[i].lifeLength;
+	    w =  (timeSpan / g.explosions[i].lifeLength) * .25;
+	    d =  (timeSpan / g.explosions[i].lifeLength) * .25;
 	    glPushMatrix();
 	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
 	    glBindTexture(GL_TEXTURE_2D, fireballSilhouette);
@@ -1405,7 +1408,84 @@ void drawExplosions()
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
     }
+    if (removeItem)
+	g.explosions.pop_front();
 }
+
+//void drawExplosions()
+//{
+//    Flt w = 0.35;
+//    Flt d = 0.35;
+//    Flt h = 0.0;
+//
+//    double timeSpan;
+//    glColor4f(1.0, 1.0, 1.0, 1.0); // reset gl color
+//    for (int i = 0; i < g.nexplosions; i++) {
+//	g.explosions[i].timer.recordTime(&g.explosions[i].timer.timeCurrent);
+//	timeSpan = g.explosions[i].timer.timeDiff(&g.explosions[i].timer.timeStart, &g.explosions[i].timer.timeCurrent);
+//
+//	//printf("timeSpan: %f\n", timeSpan);
+//	if (timeSpan < g.explosions[i].lifeLength) {
+//	    w =  (timeSpan / g.explosions[i].lifeLength) * .25;
+//	    d =  (timeSpan / g.explosions[i].lifeLength) * .25;
+//	    glPushMatrix();
+//	    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+//	    glBindTexture(GL_TEXTURE_2D, fireballSilhouette);
+//	    glEnable(GL_ALPHA_TEST);
+//	    glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+//
+//	    glTranslated(g.explosions[i].pos[0], g.explosions[i].pos[1]-.5, g.explosions[i].pos[2]);
+//	    ///// Billboarding
+//	    //Setup camera rotation matrix
+//	    //
+//	    Vec v;
+//	    VecSub(g.explosions[i].pos, g.player.pos, v);
+//	    Vec z = {0.0f, 0.0f, 0.0f};
+//	    make_view_matrix(z, v, g.cameraMatrix);
+//	    //
+//	    //Billboard_to_camera();
+//	    //
+//	    float mat[16];
+//	    mat[ 0] = g.cameraMatrix[0][0];
+//	    mat[ 1] = g.cameraMatrix[0][1];
+//	    mat[ 2] = g.cameraMatrix[0][2];
+//	    mat[ 4] = g.cameraMatrix[1][0];
+//	    mat[ 5] = g.cameraMatrix[1][1];
+//	    mat[ 6] = g.cameraMatrix[1][2];
+//	    mat[ 8] = g.cameraMatrix[2][0];
+//	    mat[ 9] = g.cameraMatrix[2][1];
+//	    mat[10] = g.cameraMatrix[2][2];
+//	    mat[ 3] = mat[ 7] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
+//	    mat[15] = 1.0f;
+//	    glMultMatrixf(mat);
+//	    //
+//	    ///// End Billboarding
+//
+//	    float tx = g.explosions[i].spriteFrame * .20;
+//
+//	    glRotatef(90, 1, 0, 0);
+//	    glBegin(GL_QUADS);
+//
+//	    glTexCoord2f(tx, 0.0f);
+//	    glVertex3f( w, h,-d);
+//
+//	    glTexCoord2f(tx+.20, 0.0f);
+//	    glVertex3f(-w, h,-d);
+//
+//	    glTexCoord2f(tx+.20, 1.0f);
+//	    glVertex3f(-w, h, d);
+//
+//	    glTexCoord2f(tx, 1.0f);
+//	    glVertex3f( w, h, d);
+//
+//	    glEnd();
+//	    glPopMatrix();
+//	}
+//	glBindTexture(GL_TEXTURE_2D, 0);
+//	glDisable(GL_ALPHA_TEST);
+//    }
+//}
+
 
 
 void drawBullets()
@@ -1592,7 +1672,8 @@ void vecNormalize(Vec v)
     v[2] *= len;
 }
 
-void shootFireball(Flt x, Flt y, Flt z) {
+void shootFireball(Flt x, Flt y, Flt z)
+{
 
     Flt speed = .25;
     //Flt speed = .125;
@@ -1612,7 +1693,8 @@ void shootFireball(Flt x, Flt y, Flt z) {
     g.nfireballs++;
 }
 
-void shootBullet() {
+void shootBullet()
+{
 
     Flt speed = .90;
 
@@ -1631,12 +1713,18 @@ void shootBullet() {
     g.nbullets++;
 }
 
-void makeExplosion(Flt x, Flt y, Flt z) {
+void makeExplosion(Flt x, Flt y, Flt z)
+{
 
-    printf("Added explosion at %f, %f, %f\n", x, y, z);
-    g.explosions[g.nexplosions].timer.recordTime(&g.explosions[g.nexplosions].timer.timeStart);
-    MakeVector(x, y, z, g.explosions[g.nexplosions].pos);
-    g.nexplosions++;
+    Explosion e;
+
+    e.timer.recordTime(&e.timer.timeStart);
+    MakeVector(x, y, z, e.pos);
+    g.explosions.push_back(e);
+
+    //g.explosions[g.nexplosions].timer.recordTime(&g.explosions[g.nexplosions].timer.timeStart);
+    //MakeVector(x, y, z, g.explosions[g.nexplosions].pos);
+    //g.nexplosions++;
 }
 
 
