@@ -8,10 +8,12 @@ doomish: doomish.cpp mytime.cpp ppm.cpp
 		libggfonts.a \
 		mytime.cpp \
 		ppm.cpp \
-		/usr/lib/x86_64-linux-gnu/libopenal.so \
-		/usr/lib/x86_64-linux-gnu/libalut.so \
-		-Wall -Wextra $(LFLAGS) -DUSE_OPENAL_SOUND \
+	    -Wall -Wextra $(LFLAGS) \
 	    -o doomish
+
+#	    #/usr/lib/x86_64-linux-gnu/libopenal.so \
+#	    #/usr/lib/x86_64-linux-gnu/libalut.so \
+#		#-Wall -Wextra $(LFLAGS) -DUSE_OPENAL_SOUND \
 
 clean:
 	rm -f doomish

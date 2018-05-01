@@ -5,7 +5,8 @@
 #include <cstring>
 //#include <unistd.h>
 //#include <time.h>
-#include <math.h>
+#include <cmath>
+//#include <math.h>
 #include <X11/Xlib.h>
 //#include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -17,6 +18,7 @@
 #include <iostream>
 #include "ppm.h"
 #include <queue>
+#include </usr/include/AL/alut.h>
 
 typedef float Flt;
 typedef Flt Vec[3];
@@ -64,7 +66,8 @@ GLuint floor1Texture;
 Ppmimage * wall1Image;
 GLuint wall1Texture;
 
-// TODO
+ALuint alPistolBuffer;
+ALuint alPistolSource;
 
 class Player {
     public:
@@ -89,7 +92,7 @@ class Player {
 	    angleH = 0.0f;
 	    angleV = 0.0f;
 	    MakeVector(0.0, 1.0, 0.0, upv);
-	    lookSpeed = 0.0080f;
+	    lookSpeed = 0.008f;
 	    moveSpeed = .1f;
 	    strafeSpeed = .10f;
 	}
@@ -129,7 +132,6 @@ class Player {
 		view[0] += viewX * moveSpeed;
 		view[2] += viewZ * moveSpeed;
 	    }
-
 	}
 
 	void moveBackward() 
@@ -207,34 +209,34 @@ class Player {
 	    }
 	}
 
-	void lookUp() 
+	void lookUp(Flt scale) 
 	{
-	    angleV -= lookSpeed;
+	    angleV -= lookSpeed*scale;
 	    if (angleV < -1.0)
 		angleV = -1.0;
 
 	    view[1] = sin(angleV);
 	}
 
-	void lookDown() 
+	void lookDown(Flt scale) 
 	{
-	    angleV += lookSpeed;
+	    angleV += lookSpeed*scale;
 	    if (angleV > 1.0)
 		angleV = 1.0;
 
 	    view[1] = sin(angleV);
 	}
 
-	void lookLeft() 
+	void lookLeft(Flt scale) 
 	{
-	    angleH += lookSpeed;
+	    angleH += lookSpeed*scale;
 	    view[0] = pos[0] + sin(angleH);
 	    view[2] = pos[2] + -cos(angleH);
 	}
 
-	void lookRight() 
+	void lookRight(Flt scale) 
 	{
-	    angleH -= lookSpeed;
+	    angleH -= lookSpeed*scale;
 	    view[0] = pos[0] + sin(angleH);
 	    view[2] = pos[2] + -cos(angleH);
 	}
@@ -636,6 +638,9 @@ void imageClean()
 }
 
 void init_opengl();
+void init_openal();
+void cleanup_sounds();
+void play_sound(ALuint source);
 void init_portals();
 
 void spawnEnemies();
@@ -661,6 +666,7 @@ int main()
 
     imageConvert();
     init_opengl();
+    init_openal();
     init_portals();
     int done=0;
     int frameCount=0;
@@ -705,6 +711,7 @@ int main()
 	}
     }
     cleanup_fonts();
+    cleanup_sounds();
     imageClean();
     return 0;
 }
@@ -807,6 +814,73 @@ void init_opengl()
     //glXSwapIntervalEXT(x11.dpy, drawable, 0);
 }
 
+void init_openal()
+{
+    #ifdef USE_OPENAL_SOUND
+    alutInit(0, NULL);
+    if (alGetError() != AL_NO_ERROR) {
+	printf("ERROR: alutInit()\n");
+    }
+    //Clear error state.
+    alGetError();
+    //
+    //Setup the listener.
+    //Forward and up vectors are used.
+    float vec[6] = {1.0f,1.0f,1.0f, 1.0f,1.0f,1.0f};
+    //float vec[6] = {0.0f,0.0f,1.0f, 0.0f,1.0f,0.0f};
+    alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
+    alListenerfv(AL_ORIENTATION, vec);
+    alListenerf(AL_GAIN, 1.0f);
+    //
+
+    // Pistol Sound
+    //Buffer holds the sound information.
+    alPistolBuffer = alutCreateBufferFromFile("./sounds/pistol.wav");
+    //
+    //Source refers to the sound.
+    //Generate a source, and store it in a buffer.
+    alGenSources(1, &alPistolSource);
+    alSourcei(alPistolSource, AL_BUFFER, alPistolBuffer);
+    //Set volume and pitch to normal, no looping of sound.
+    alSourcef(alPistolSource, AL_GAIN, 0.20f);
+    alSourcef(alPistolSource, AL_PITCH, 1.0f);
+    alSourcei(alPistolSource, AL_LOOPING, AL_FALSE);
+
+    if (alGetError() != AL_NO_ERROR) {
+	printf("ERROR: setting source\n");
+    }
+    #endif //USE_OPENAL_SOUND
+}
+
+void cleanup_sounds()
+{
+    #ifdef USE_OPENAL_SOUND
+    //delete the source
+    alDeleteSources(1, &alPistolSource);
+    //delete buffer
+    alDeleteBuffers(1, &alPistolBuffer);
+
+    //close out openal
+    //get active context
+    ALCcontext *Context = alcGetCurrentContext();
+    //get device for active contex
+    ALCdevice *Device = alcGetContextsDevice(Context);
+    //disable contex
+    alcMakeContextCurrent(NULL);
+    //release context(s)
+    alcDestroyContext(Context);
+    //close device
+    alcCloseDevice(Device);
+    #endif //USE_OPENAL_SOUND
+}
+
+void play_sound(ALuint source)
+{
+    #ifdef USE_OPENAL_SOUND
+    alSourcePlay(source);
+    #endif //USE_OPENAL_SOUND
+}
+
 void check_mouse(XEvent *e)
 {
     if (e->type == ButtonPress) {
@@ -822,23 +896,35 @@ void check_mouse(XEvent *e)
     static int savex = 0;
     static int savey = 0;
     if (savex != e->xbutton.x || savey != e->xbutton.y) {
+
 	//Mouse moved
 	int xdiff = savex - e->xbutton.x;
 	int ydiff = savey - e->xbutton.y;
+
+	// Mouse movement scaling
+	Flt len = xdiff*xdiff + ydiff*ydiff;
+	len = 1.0 / sqrt(len);
+	Flt scale = fabs(1.0-len);
+	//printf("scale: %f\n", scale);
+	// scale != scale ensures scale is not NaN
+	if (scale == 0.0 || scale != scale)
+	    scale = 0.0000000000000001;
+
+
 	if (xdiff < 0) {
-	    g.player.lookLeft();
+	    g.player.lookLeft(scale);
 
 	}
 	else if (xdiff > 0) {
-	    g.player.lookRight();
+	    g.player.lookRight(scale);
 
 	}
 	if (ydiff < 0) {
-	    g.player.lookUp();
+	    g.player.lookUp(scale);
 
 	}
 	if (ydiff > 0) {
-	    g.player.lookDown();
+	    g.player.lookDown(scale);
 
 	}
 	savex = g.xres/2;
@@ -1696,6 +1782,8 @@ void shootFireball(Flt x, Flt y, Flt z)
 void shootBullet()
 {
 
+    play_sound(alPistolSource);
+
     Flt speed = .90;
 
     // Camera center - brute center
@@ -2227,7 +2315,7 @@ void render()
     drawFliers();
     drawFireballs();
     // Show bullet trajectory for debugging
-    drawBullets();
+    //drawBullets();
     drawExplosions();
     //
     //switch to 2D mode
