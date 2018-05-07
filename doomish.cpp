@@ -972,7 +972,6 @@ int check_keys(XEvent *e)
     int key = XLookupKeysym(&e->xkey, 0);
     if (e->type == KeyRelease) {
 	switch(key) {
-	    // Camera angle
 	    case XK_w:
 		g.key_states = g.key_states&~(g.w_mask);
 		break;
