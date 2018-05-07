@@ -401,6 +401,7 @@ class Global {
 	Bullet * bullets;
 	int nbullets;
 	std::deque<Explosion> explosions;
+	int damageScreenCountdown;
 	//Explosion * explosions;
 	//int nexplosions;
 
@@ -410,6 +411,7 @@ class Global {
 
 	Global() {
 	    shotReset = 0;
+	    damageScreenCountdown = 30;
 	    xres = 0.0;
 	    yres = 0.0;
 	    fps = 0;
@@ -1019,6 +1021,26 @@ int check_keys(XEvent *e)
 	}
     }
     return 0;
+}
+
+void drawDamageScreen()
+{
+    glColor4f(1.0, 0.0, 0.0, 0.10); // reset gl color
+    //glDisable(GL_LIGHT0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glPushMatrix();
+
+    glBegin(GL_QUADS);
+
+    glVertex2f(0, 0);
+    glVertex2f(0, g.yres);
+    glVertex2f(g.xres, g.yres);
+    glVertex2f(g.xres, 0);
+
+    glEnd();
+    glPopMatrix();
+    glDisable(GL_BLEND);
 }
 
 void drawFloor()
@@ -1741,6 +1763,7 @@ void drawGun() {
     glBindTexture(GL_TEXTURE_2D, crosshairSilhouette);
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0f); //Alpha
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 1.0f); glVertex2i(g.xres/2-20, (g.yres/2));
     glTexCoord2f(0.0f, 0.0f); glVertex2i(g.xres/2-20, (g.yres/2+60)-100); 
@@ -1771,6 +1794,10 @@ void drawGun() {
 	glTexCoord2f(1.0f, 1.0f); glVertex2i(g.xres/2+(g.xres/9),   0);
 	g.shotReset -= 1;
     }
+    glEnd();
+    glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_ALPHA_TEST);
 }
 
 void vecNormalize(Vec v)
@@ -1938,6 +1965,7 @@ void physics()
 	    if (timeSpan > 0.5f) {
 		g.brutes[i].timer.timeCopy(&g.brutes[i].lastHit, &g.brutes[i].timer.timeCurrent);
 		g.player.health -= 5;
+		g.damageScreenCountdown = 30;
 	    }
 	}
 
@@ -2049,6 +2077,7 @@ void physics()
 		g.fireballs[i].pos[2] > g.player.pos[2] - 1)   // back of player
 	{
 	    g.player.health -= 10;
+	    g.damageScreenCountdown = 30;
 
 	    // Copy last fireball to current possition and decrement nfireballs
 	    if (g.nfireballs > 1) {
@@ -2260,6 +2289,9 @@ void physics()
 	    g.portals[i].timer.recordTime(&g.portals[i].timer.animTime);
 	}
     }
+
+    if (g.damageScreenCountdown > 0)
+	g.damageScreenCountdown -= 1;
 }
 
 void init_image(char * imagePath, Ppmimage * image, GLuint * texture)
@@ -2386,7 +2418,8 @@ void render()
 	ggprint40(&r, 40, 0x00887766, "Score: %d", g.player.score);
 	ggprint16(&r, 32, 0x00887766, "Pres ESC to exit");
     }
-
+    if (g.damageScreenCountdown)
+	drawDamageScreen();
     //    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
     //    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
     //    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
