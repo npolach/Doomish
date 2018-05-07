@@ -2400,13 +2400,15 @@ void render()
     drawGun();
     r.center = 0;
 
-    //r.bot = g.yres-5;
-    //r.left = g.xres-50;
+    r.bot = g.yres/2+100;
+    r.left = g.xres/2-125;
 
     if (g.introTime > 0) {
 	// Instructions
 	ggprint16(&r, 32, 0x00887766, "WASD: Move player");
+	ggprint16(&r, 32, 0x00887766, "Move mouse: Look around");
 	ggprint16(&r, 32, 0x00887766, "Left Mouse Click: Shoot gun");
+	ggprint16(&r, 32, 0x00887766, "ESC: Exit game");
     } else {
 	// FPS
 	r.bot = g.yres-5;
