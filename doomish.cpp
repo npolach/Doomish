@@ -411,7 +411,7 @@ class Global {
 
 	Global() {
 	    shotReset = 0;
-	    damageScreenCountdown = 30;
+	    damageScreenCountdown = 0;
 	    xres = 0.0;
 	    yres = 0.0;
 	    fps = 0;
@@ -752,6 +752,8 @@ void init_opengl()
     GLfloat ambientColor[] = {0.3f, 0.3f, 0.3f, 1.0f}; //Color(0.2, 0.2, 0.2)
     //GLfloat ambientColor[] = {0.4f, 0.4f, 0.4f, 1.0f}; //Color(0.2, 0.2, 0.2)
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
+
+
 
 
     //Do this to allow fonts
@@ -2379,6 +2381,7 @@ void render()
     //
     drawFloor();
     drawWall();
+    glDisable(GL_LIGHTING);
     drawPortals();
     drawBrutes();
     drawFliers();
