@@ -402,6 +402,7 @@ class Global {
 	int nbullets;
 	std::deque<Explosion> explosions;
 	int damageScreenCountdown;
+	int introTime;
 	//Explosion * explosions;
 	//int nexplosions;
 
@@ -412,6 +413,7 @@ class Global {
 	Global() {
 	    shotReset = 0;
 	    damageScreenCountdown = 0;
+	    introTime = 8;
 	    xres = 0.0;
 	    yres = 0.0;
 	    fps = 0;
@@ -712,6 +714,8 @@ int main()
 		g.fps = frameCount;
 		frameCount = 0;
 		frameTimer.recordTime(&frameTimer.timeStart);
+		if (g.introTime > 0)
+		    g.introTime -= 1;
 	    }
 	    spawnEnemies();
 	}
@@ -730,8 +734,6 @@ void init_portals()
     MakeVector(-12.5, 0.0, -27.5, g.portals[3].pos);
     g.nportals = 4;
 }
-
-
 
 void init_opengl()
 {
@@ -752,9 +754,6 @@ void init_opengl()
     GLfloat ambientColor[] = {0.3f, 0.3f, 0.3f, 1.0f}; //Color(0.2, 0.2, 0.2)
     //GLfloat ambientColor[] = {0.4f, 0.4f, 0.4f, 1.0f}; //Color(0.2, 0.2, 0.2)
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
-
-
-
 
     //Do this to allow fonts
     glEnable(GL_TEXTURE_2D);
@@ -2401,28 +2400,37 @@ void render()
     drawGun();
     r.center = 0;
 
-    // FPS
-    r.bot = g.yres-5;
-    r.left = g.xres-50;
-    ggprint8b(&r, 16, 0x00887766, "");
-    ggprint8b(&r, 16, 0x00887766, "FPS: %d", g.fps);
+    //r.bot = g.yres-5;
+    //r.left = g.xres-50;
 
-    // Health/score
-    r.bot = g.yres - 35;
-    r.left = 10;
-    if (g.player.health > 1) {
-	ggprint16(&r, 32, 0x00887766, "Health: %d", (int)g.player.health);
-	ggprint16(&r, 32, 0x00887766, "Score: %d", g.player.score);
+    if (g.introTime > 0) {
+	// Instructions
+	ggprint16(&r, 32, 0x00887766, "WASD: Move player");
+	ggprint16(&r, 32, 0x00887766, "Left Mouse Click: Shoot gun");
     } else {
-	r.bot = g.yres/2+100;
-	r.left = g.xres/2-95;
-	ggprint40(&r, 40, 0x00887766, "Game Over");
-	r.left = g.xres/2-70;
-	ggprint40(&r, 40, 0x00887766, "Score: %d", g.player.score);
-	ggprint16(&r, 32, 0x00887766, "Pres ESC to exit");
+	// FPS
+	r.bot = g.yres-5;
+	r.left = g.xres-50;
+	ggprint8b(&r, 16, 0x00887766, "");
+	ggprint8b(&r, 16, 0x00887766, "FPS: %d", g.fps);
+
+	// Health/score
+	r.bot = g.yres - 35;
+	r.left = 10;
+	if (g.player.health > 1) {
+	    ggprint16(&r, 32, 0x00887766, "Health: %d", (int)g.player.health);
+	    ggprint16(&r, 32, 0x00887766, "Score: %d", g.player.score);
+	} else {
+	    r.bot = g.yres/2+100;
+	    r.left = g.xres/2-95;
+	    ggprint40(&r, 40, 0x00887766, "Game Over");
+	    r.left = g.xres/2-70;
+	    ggprint40(&r, 40, 0x00887766, "Score: %d", g.player.score);
+	    ggprint16(&r, 32, 0x00887766, "Pres ESC to exit");
+	}
+	if (g.damageScreenCountdown)
+	    drawDamageScreen();
     }
-    if (g.damageScreenCountdown)
-	drawDamageScreen();
     //    ggprint8b(&r, 16, 0x00887766, "Camera Info:");
     //    ggprint8b(&r, 16, 0x00887766, "    Position: [%.2f, %.2f, %.2f]", g.player.pos[0], g.player.pos[1], g.player.pos[2]);
     //    ggprint8b(&r, 16, 0x00887766, "    Direction: [%.2f, %.2f, %.2f]", g.player.view[0], g.player.view[1], g.player.view[2]);
