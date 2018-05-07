@@ -413,7 +413,7 @@ class Global {
 	Global() {
 	    shotReset = 0;
 	    damageScreenCountdown = 0;
-	    introTime = 8;
+	    introTime = 5;
 	    xres = 0.0;
 	    yres = 0.0;
 	    fps = 0;
