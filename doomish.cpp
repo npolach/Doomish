@@ -72,6 +72,11 @@ ALuint alPistolSource;
 ALuint alFireballBuffer;
 ALuint alFireballSource;
 
+ALuint alHurtBuffer;
+ALuint alHurtSource;
+
+
+
 
 class Player {
     public:
@@ -868,6 +873,21 @@ void init_openal()
     alSourcef(alFireballSource, AL_PITCH, 1.0f);
     alSourcei(alFireballSource, AL_LOOPING, AL_FALSE);
 
+    // Hurt Sound
+    //Buffer holds the sound information.
+    alHurtBuffer = alutCreateBufferFromFile("./sounds/hurt.wav");
+    //
+    //Source refers to the sound.
+    //Generate a source, and store it in a buffer.
+    alGenSources(1, &alHurtSource);
+    alSourcei(alHurtSource, AL_BUFFER, alHurtBuffer);
+    //Set volume and pitch to normal, no looping of sound.
+    alSourcef(alHurtSource, AL_GAIN, 0.20f);
+    //alSourcef(alHurtSource, AL_GAIN, 0.20f);
+    alSourcef(alHurtSource, AL_PITCH, 1.0f);
+    alSourcei(alHurtSource, AL_LOOPING, AL_FALSE);
+
+
 
     if (alGetError() != AL_NO_ERROR) {
 	printf("ERROR: setting source\n");
@@ -887,6 +907,13 @@ void cleanup_sounds()
     alDeleteSources(1, &alFireballSource);
     //delete buffer
     alDeleteBuffers(1, &alFireballBuffer);
+
+    //delete the source
+    alDeleteSources(1, &alHurtSource);
+    //delete buffer
+    alDeleteBuffers(1, &alHurtBuffer);
+
+
 
 
     //close out openal
@@ -1889,6 +1916,7 @@ void physics()
 		g.brutes[i].timer.timeCopy(&g.brutes[i].lastHit, &g.brutes[i].timer.timeCurrent);
 		g.player.health -= 5;
 		g.damageScreenCountdown = 30;
+	        play_sound(alHurtSource);
 	    }
 	}
 
@@ -2001,6 +2029,7 @@ void physics()
 	{
 	    g.player.health -= 10;
 	    g.damageScreenCountdown = 30;
+	    play_sound(alHurtSource);
 
 	    // Copy last fireball to current possition and decrement nfireballs
 	    if (g.nfireballs > 1) {
