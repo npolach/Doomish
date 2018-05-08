@@ -882,7 +882,7 @@ void init_openal()
     alGenSources(1, &alHurtSource);
     alSourcei(alHurtSource, AL_BUFFER, alHurtBuffer);
     //Set volume and pitch to normal, no looping of sound.
-    alSourcef(alHurtSource, AL_GAIN, 0.20f);
+    alSourcef(alHurtSource, AL_GAIN, 0.50f);
     //alSourcef(alHurtSource, AL_GAIN, 0.20f);
     alSourcef(alHurtSource, AL_PITCH, 1.0f);
     alSourcei(alHurtSource, AL_LOOPING, AL_FALSE);
